@@ -1,0 +1,12 @@
+{
+  "name": "acadexa",
+  "version": "1.0.0",
+  "description": "Web-based Classroom Application",
+  "private": true,
+  "scripts": {
+    "server": "npm --prefix server start",
+    "server:dev": "npm --prefix server run dev"
+  },
+  "author": "Arsalan Mateen",
+  "license": "MIT"
+}
