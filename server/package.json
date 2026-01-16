@@ -11,7 +11,8 @@
   "license": "MIT",
   "dependencies": {
     "express": "4.17.1",
-    "dotenv": "^18.0.4"
+    "dotenv": "^18.0.4",
+    "body-parser": "1.19.0"
   },
   "devDependencies": {
     "nodemon": "2.0.2"
