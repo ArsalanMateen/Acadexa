@@ -1,3 +1,4 @@
+import config from "./config/config.js";
 import app from "./express.js";
 
-app.listen(Number(process.env.PORT) || 5000);
+app.listen(config.port);
