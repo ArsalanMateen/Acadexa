@@ -11,6 +11,8 @@ app.use(cookieParser());
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.use("/", usersRoutes);
 app.use("/", authRoutes);
-
+app.use((err, req, res, _next) => {
+  if (err) res.status(err.name === "UnauthorizedError" ? 401 : 400).json({ error: err.message });
+});
 
 export default app;
