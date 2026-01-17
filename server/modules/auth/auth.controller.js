@@ -77,4 +77,11 @@ const hasAuthorization = (req, res, next) => {
   next();
 };
 
-export default { signin, signout, requireSignin, hasAuthorization };
+const optionalSignin = expressJwt({
+  secret: config.jwtSecret,
+  userProperty: "auth",
+  algorithms: ["HS256"],
+  credentialsRequired: false,
+});
+
+export default { signin, signout, requireSignin, hasAuthorization, optionalSignin };
