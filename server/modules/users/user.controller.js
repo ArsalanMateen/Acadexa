@@ -18,4 +18,34 @@ const create = async (req, res) => {
   }
 };
 
-export default { create };
+const userByID = async (req, res, next, id) => {
+  try {
+    let user = await User.findById(id);
+
+    if (!user) {
+      return res.status(400).json({
+        error: "User not found",
+      });
+    }
+
+    req.profile = user;
+    next();
+  } catch {
+    return res.status(400).json({
+      error: "Could not retrieve user",
+    });
+  }
+};
+
+const read = (req, res) => {
+  const profile = req.profile.toObject();
+
+  delete profile.hashed_password;
+  delete profile.salt;
+
+  if (String(req.auth._id) !== String(req.profile._id)) delete profile.email;
+
+  return res.json(profile);
+};
+
+export default { create, userByID, read };
