@@ -72,4 +72,16 @@ const update = async (req, res) => {
   }
 };
 
-export default { create, userByID, read, update };
+const list = async (req, res) => {
+  try {
+    let users = await User.find().select("name instructor created").lean().exec();
+
+    res.json(users);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+export default { create, userByID, read, update, list };
