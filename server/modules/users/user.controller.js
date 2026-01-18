@@ -48,4 +48,28 @@ const read = (req, res) => {
   return res.json(profile);
 };
 
-export default { create, userByID, read };
+const update = async (req, res) => {
+  try {
+    let user = req.profile;
+
+    for (const field of ["name", "email", "password", "instructor"]) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        user[field] = req.body[field];
+      }
+    }
+
+    user.updated = Date.now();
+
+    await user.save();
+
+    user.hashed_password = undefined;
+    user.salt = undefined;
+    res.json(user);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+export default { create, userByID, read, update };
