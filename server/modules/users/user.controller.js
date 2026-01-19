@@ -84,4 +84,16 @@ const list = async (req, res) => {
   }
 };
 
-export default { create, userByID, read, update, list };
+const isInstructor = (req, res, next) => {
+  const isInstructor = req.profile && req.profile.instructor;
+
+  if (!isInstructor) {
+    return res.status(403).json({
+      error: "User is not an instructor",
+    });
+  }
+
+  next();
+};
+
+export default { create, userByID, read, update, list, isInstructor };
