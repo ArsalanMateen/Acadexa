@@ -18,4 +18,82 @@ const create = async (req, res) => {
   }
 };
 
-export default { create };
+const userByID = async (req, res, next, id) => {
+  try {
+    let user = await User.findById(id);
+
+    if (!user) {
+      return res.status(400).json({
+        error: "User not found",
+      });
+    }
+
+    req.profile = user;
+    next();
+  } catch {
+    return res.status(400).json({
+      error: "Could not retrieve user",
+    });
+  }
+};
+
+const read = (req, res) => {
+  const profile = req.profile.toObject();
+
+  delete profile.hashed_password;
+  delete profile.salt;
+
+  if (String(req.auth._id) !== String(req.profile._id)) delete profile.email;
+
+  return res.json(profile);
+};
+
+const update = async (req, res) => {
+  try {
+    let user = req.profile;
+
+    for (const field of ["name", "email", "password", "instructor"]) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        user[field] = req.body[field];
+      }
+    }
+
+    user.updated = Date.now();
+
+    await user.save();
+
+    user.hashed_password = undefined;
+    user.salt = undefined;
+    res.json(user);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+const list = async (req, res) => {
+  try {
+    let users = await User.find().select("name instructor created").lean().exec();
+
+    res.json(users);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+const isInstructor = (req, res, next) => {
+  const isInstructor = req.profile && req.profile.instructor;
+
+  if (!isInstructor) {
+    return res.status(403).json({
+      error: "User is not an instructor",
+    });
+  }
+
+  next();
+};
+
+export default { create, userByID, read, update, list, isInstructor };
