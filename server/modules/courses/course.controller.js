@@ -42,4 +42,29 @@ const listByInstructor = async (req, res) => {
   }
 };
 
-export default { create, listByInstructor };
+const courseByID = async (req, res, next, id) => {
+  try {
+    let course = await Course.findById(id).populate("instructor", "_id name instructor");
+
+    if (!course) {
+      return res.status(400).json({
+        error: "Course not found",
+      });
+    }
+
+    req.course = course;
+    next();
+  } catch {
+    return res.status(400).json({
+      error: "Could not retrieve course",
+    });
+  }
+};
+
+const read = (req, res) => {
+  const isOwner = req.auth && String(req.course.instructor?._id || req.course.instructor) === String(req.auth._id);
+  if (!req.course.published && !isOwner) return res.status(404).json({ error: "Course not found" });
+  return res.json(req.course);
+};
+
+export default { create, listByInstructor, courseByID, read };
