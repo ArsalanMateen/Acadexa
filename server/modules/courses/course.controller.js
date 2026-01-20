@@ -85,4 +85,13 @@ const isInstructor = (req, res, next) => {
 
 const update = (req, res) => parseCourseForm(req, res, true);
 
-export default { create, listByInstructor, courseByID, read, isInstructor, update };
+const listPublished = async (req, res) => {
+  try {
+    const courses = await Course.find({ published: true }).populate("instructor", "_id name").lean().exec();
+    return res.json(courses);
+  } catch (err) {
+    return res.status(400).json({ error: errorHandler.getErrorMessage(err) });
+  }
+};
+
+export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished };
