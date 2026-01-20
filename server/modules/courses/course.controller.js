@@ -67,4 +67,22 @@ const read = (req, res) => {
   return res.json(req.course);
 };
 
-export default { create, listByInstructor, courseByID, read };
+const isInstructor = (req, res, next) => {
+  const isInstructor =
+    req.course &&
+    req.auth &&
+    req.course.instructor &&
+    String(req.course.instructor._id || req.course.instructor) === String(req.auth._id);
+
+  if (!isInstructor) {
+    return res.status(403).json({
+      error: "User is not authorized",
+    });
+  }
+
+  next();
+};
+
+const update = (req, res) => parseCourseForm(req, res, true);
+
+export default { create, listByInstructor, courseByID, read, isInstructor, update };

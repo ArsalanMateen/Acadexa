@@ -8,6 +8,7 @@ const router = express.Router();
 router.post("/api/courses/by/:userId", authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.isInstructor, courseCtrl.create);
 router.get("/api/courses/by/:userId", authCtrl.requireSignin, authCtrl.hasAuthorization, courseCtrl.listByInstructor);
 router.get("/api/courses/:courseId", authCtrl.optionalSignin, courseCtrl.read);
+router.put("/api/courses/:courseId", authCtrl.requireSignin, courseCtrl.isInstructor, courseCtrl.update);
 router.param("userId", userCtrl.userByID);
 router.param("courseId", courseCtrl.courseByID);
 
