@@ -94,4 +94,28 @@ const listPublished = async (req, res) => {
   }
 };
 
-export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished };
+const newLesson = async (req, res) => {
+  try {
+    let lesson = req.body.lesson;
+
+    if (!lesson || typeof lesson.title !== "string" || !lesson.title.trim()) {
+      return res.status(400).json({ error: "Lesson title is required." });
+    }
+
+    let result = await Course.findByIdAndUpdate(
+      req.course._id,
+      { $push: { lessons: lesson }, updated: Date.now() },
+      { new: true, runValidators: true },
+    )
+      .populate("instructor", "_id name")
+      .exec();
+
+    res.json(result);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson };
