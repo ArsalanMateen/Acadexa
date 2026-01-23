@@ -12,7 +12,11 @@ const parseCourseForm = (req, res, edit = false) => {
       for (const field of ["name", "description", "category", "published"]) {
         if (Object.prototype.hasOwnProperty.call(fields, field)) course[field] = fields[field];
       }
-      
+      if (Object.prototype.hasOwnProperty.call(fields, "lessons")) {
+        const lessons = typeof fields.lessons === "string" ? JSON.parse(fields.lessons) : fields.lessons;
+        if (!Array.isArray(lessons)) throw new Error("Lessons must be an array.");
+        course.lessons = lessons;
+      }
       course.updated = new Date();
       await course.validate();
       
