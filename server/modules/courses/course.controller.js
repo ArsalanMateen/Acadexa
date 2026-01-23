@@ -13,9 +13,33 @@ const parseCourseForm = (req, res, edit = false) => {
         if (Object.prototype.hasOwnProperty.call(fields, field)) course[field] = fields[field];
       }
       if (Object.prototype.hasOwnProperty.call(fields, "lessons")) {
-        const lessons = typeof fields.lessons === "string" ? JSON.parse(fields.lessons) : fields.lessons;
+        const lessons =
+          typeof fields.lessons === "string" ? JSON.parse(fields.lessons) : fields.lessons;
+
         if (!Array.isArray(lessons)) throw new Error("Lessons must be an array.");
-        course.lessons = lessons;
+
+        const existingIds = new Set(course.lessons.map((lesson) => String(lesson._id)));
+        const seen = new Set();
+
+        course.lessons = lessons.map((lesson) => {
+          if (!lesson || typeof lesson.title !== "string" || !lesson.title.trim()) {
+            throw new Error("Each lesson needs a title.");
+          }
+          if (
+            lesson._id &&
+            (!existingIds.has(String(lesson._id)) || seen.has(String(lesson._id)))
+          ) {
+            throw new Error("Invalid or duplicate lesson ID.");
+          }
+          if (lesson._id) seen.add(String(lesson._id));
+
+          return {
+            ...(lesson._id ? { _id: lesson._id } : {}),
+            title: lesson.title,
+            content: lesson.content,
+            resource_url: lesson.resource_url,
+          };
+        });
       }
       course.updated = new Date();
       await course.validate();
