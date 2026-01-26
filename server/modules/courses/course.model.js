@@ -1,13 +1,46 @@
 import mongoose from "mongoose";
 
-const CourseSchema = new mongoose.Schema({
-  name: { type: String, trim: true, required: "Name is required" },
-  description: { type: String, trim: true },
-  category: { type: String, required: "Category is required" },
-  published: { type: Boolean, default: false },
-  instructor: { type: mongoose.Schema.ObjectId, ref: "User" },
-  updated: Date,
-  created: { type: Date, default: Date.now },
+const LessonSchema = new mongoose.Schema({
+  title: { type: String, trim: true, required: "Lesson title is required" },
+  content: String,
+  resource_url: String,
 });
 
-export default mongoose.model("Course", CourseSchema);
+const Lesson = mongoose.model("Lesson", LessonSchema);
+
+const CourseSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    trim: true,
+    required: "Name is required",
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  category: {
+    type: String,
+    required: "Category is required",
+  },
+  published: {
+    type: Boolean,
+    default: false,
+  },
+  instructor: {
+    type: mongoose.Schema.ObjectId,
+    ref: "User",
+  },
+  lessons: [LessonSchema],
+  updated: Date,
+  created: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+
+const Course = mongoose.model("Course", CourseSchema);
+
+export { Lesson };
+
+export default Course;
