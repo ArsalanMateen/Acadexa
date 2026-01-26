@@ -53,4 +53,46 @@ const create = async (req, res) => {
   }
 };
 
-export default { findEnrollment, create };
+const enrollmentByID = async (req, res, next, id) => {
+  try {
+    let enrollment = await Enrollment.findById(id)
+      .populate({
+        path: "course",
+        populate: { path: "instructor", select: "_id name" },
+      })
+      .populate("student", "_id name");
+
+    if (!enrollment) {
+      return res.status(400).json({
+        error: "Enrollment not found",
+      });
+    }
+
+    req.enrollment = enrollment;
+    next();
+  } catch {
+    return res.status(400).json({
+      error: "Could not retrieve enrollment",
+    });
+  }
+};
+
+const isStudent = (req, res, next) => {
+  const isStudent =
+    req.auth &&
+    req.enrollment &&
+    req.enrollment.student &&
+    String(req.auth._id) === String(req.enrollment.student._id || req.enrollment.student);
+
+  if (!isStudent) {
+    return res.status(403).json({
+      error: "User is not enrolled",
+    });
+  }
+
+  next();
+};
+
+const read = (req, res) => res.json(req.enrollment);
+
+export default { findEnrollment, create, enrollmentByID, isStudent, read };
