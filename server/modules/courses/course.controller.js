@@ -58,6 +58,7 @@ const create = (req, res) => parseCourseForm(req, res);
 const listByInstructor = async (req, res) => {
   try {
     let courses = await Course.find({ instructor: req.profile._id })
+      .select("-lessons.content -lessons.resource_url")
       .populate("instructor", "_id name")
       .lean()
       .exec();
@@ -90,9 +91,20 @@ const courseByID = async (req, res, next, id) => {
 };
 
 const read = (req, res) => {
-  const isOwner = req.auth && String(req.course.instructor?._id || req.course.instructor) === String(req.auth._id);
-  if (!req.course.published && !isOwner) return res.status(404).json({ error: "Course not found" });
-  return res.json(req.course);
+  const isOwner =
+    req.auth &&
+    req.course.instructor &&
+    String(req.course.instructor._id || req.course.instructor) === String(req.auth._id);
+
+  if (!req.course.published && !isOwner) {
+    return res.status(404).json({ error: "Course not found" });
+  }
+  if (isOwner) return res.json(req.course);
+
+  const course = req.course.toObject();
+  course.lessons = course.lessons.map(({ _id, title }) => ({ _id, title }));
+
+  return res.json(course);
 };
 
 const isInstructor = (req, res, next) => {
