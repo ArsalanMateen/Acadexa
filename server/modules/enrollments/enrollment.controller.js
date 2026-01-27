@@ -95,4 +95,23 @@ const isStudent = (req, res, next) => {
 
 const read = (req, res) => res.json(req.enrollment);
 
-export default { findEnrollment, create, enrollmentByID, isStudent, read };
+const listEnrolled = async (req, res) => {
+  try {
+    let enrollments = await Enrollment.find({ student: req.auth._id })
+      .sort({ completed: 1 })
+      .populate({
+        path: "course",
+        select: "_id name category description image lessons instructor",
+        populate: { path: "instructor", select: "_id name" },
+      });
+    const current = enrollments.filter((item) => item.course);
+
+    res.json(current);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled };
