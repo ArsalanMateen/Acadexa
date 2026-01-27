@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import usersRoutes from "./modules/users/user.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import coursesRoutes from "./modules/courses/course.routes.js";
+import enrollmentsRoutes from "./modules/enrollments/enrollment.routes.js";
 
 const app = express();
 app.use(bodyParser.json());
@@ -13,6 +14,7 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.use("/", usersRoutes);
 app.use("/", authRoutes);
 app.use("/", coursesRoutes);
+app.use("/", enrollmentsRoutes);
 app.use((err, req, res, _next) => {
   if (err) res.status(err.name === "UnauthorizedError" ? 401 : 400).json({ error: err.message });
 });
