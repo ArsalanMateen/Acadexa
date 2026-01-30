@@ -162,4 +162,55 @@ const synchronizeProgress = async (enrollment) => {
   return enrollment;
 };
 
-export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled };
+const complete = async (req, res) => {
+  try {
+    if (typeof req.body.complete !== "boolean") {
+      return res.status(400).json({ error: "Lesson completion must be a boolean." });
+    }
+
+    const current = await synchronizeProgress(req.enrollment);
+
+    const status = current.lessonStatus.id(req.body.lessonStatusId);
+
+    if (!status) {
+      return res.status(400).json({ error: "Lesson status does not belong to this enrollment." });
+    }
+
+    await Enrollment.updateOne(
+      { _id: current._id, student: req.auth._id, "lessonStatus._id": status._id },
+      { $set: { "lessonStatus.$.complete": req.body.complete, updated: new Date() } },
+    );
+    // Derive completion from persisted progress, including concurrent changes.
+    await Enrollment.updateOne(
+      {
+        _id: current._id,
+        "lessonStatus.0": { $exists: true },
+        lessonStatus: { $not: { $elemMatch: { complete: false } } },
+        completed: { $exists: false },
+      },
+      { $set: { completed: new Date() } },
+    );
+    await Enrollment.updateOne(
+      {
+        _id: current._id,
+        $or: [
+          { lessonStatus: { $elemMatch: { complete: false } } },
+          { lessonStatus: { $size: 0 } },
+        ],
+      },
+      { $unset: { completed: 1 } },
+    );
+
+    const enrollment = await Enrollment.findById(current._id)
+      .populate({ path: "course", populate: { path: "instructor", select: "_id name" } })
+      .populate("student", "_id name");
+
+    return res.json(enrollment);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled, complete };
