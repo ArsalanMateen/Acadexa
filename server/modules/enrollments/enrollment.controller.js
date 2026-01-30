@@ -213,4 +213,21 @@ const complete = async (req, res) => {
   }
 };
 
-export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled, complete };
+const enrollmentStats = async (req, res) => {
+  try {
+    const enrollments = await Enrollment.find({ course: req.course._id }).select("lessonStatus");
+
+    res.json({
+      totalEnrolled: enrollments.length,
+      totalCompleted: enrollments.filter((item) =>
+        isCourseComplete(alignLessonStatus(req.course.lessons, item.lessonStatus)),
+      ).length,
+    });
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled, complete, enrollmentStats };
