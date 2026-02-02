@@ -1,6 +1,7 @@
 import Enrollment from "./enrollment.model.js";
 import Course from "../courses/course.model.js";
 import errorHandler from "../../lib/dbErrorHandler.js";
+import { alignLessonStatus, isCourseComplete } from "./enrollmentProgress.js";
 
 const findEnrollment = async (req, res, next) => {
   try {
@@ -93,7 +94,13 @@ const isStudent = (req, res, next) => {
   next();
 };
 
-const read = (req, res) => res.json(req.enrollment);
+const read = async (req, res) => {
+  try {
+    return res.json(await synchronizeProgress(req.enrollment));
+  } catch (err) {
+    return res.status(400).json({ error: errorHandler.getErrorMessage(err) });
+  }
+};
 
 const listEnrolled = async (req, res) => {
   try {
@@ -104,7 +111,9 @@ const listEnrolled = async (req, res) => {
         select: "_id name category description image lessons instructor",
         populate: { path: "instructor", select: "_id name" },
       });
-    const current = enrollments.filter((item) => item.course);
+    const current = await Promise.all(
+      enrollments.filter((item) => item.course).map(synchronizeProgress),
+    );
 
     res.json(current);
   } catch (err) {
@@ -114,4 +123,111 @@ const listEnrolled = async (req, res) => {
   }
 };
 
-export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled };
+const synchronizeProgress = async (enrollment) => {
+  if (!enrollment.course) throw new Error("This course is no longer available.");
+
+  const statuses = alignLessonStatus(enrollment.course.lessons, enrollment.lessonStatus);
+  const changed =
+    statuses.length !== enrollment.lessonStatus.length ||
+    statuses.some(
+      (status, index) => String(status.lesson) !== String(enrollment.lessonStatus[index]?.lesson),
+    );
+
+  if (changed) {
+    // Only change curriculum alignment if no concurrent progress write occurred.
+    const previousUpdated = enrollment.updated;
+
+    enrollment.lessonStatus = statuses;
+
+    const data = { lessonStatus: enrollment.lessonStatus.toObject(), updated: new Date() };
+
+    if (isCourseComplete(statuses) && !enrollment.completed) {
+      data.completed = new Date();
+    }
+
+    const operation = { $set: data };
+
+    if (!isCourseComplete(statuses)) operation.$unset = { completed: 1 };
+
+    await Enrollment.updateOne(
+      { _id: enrollment._id, updated: previousUpdated || { $exists: false } },
+      operation,
+    );
+
+    return Enrollment.findById(enrollment._id)
+      .populate({ path: "course", populate: { path: "instructor", select: "_id name" } })
+      .populate("student", "_id name");
+  }
+
+  return enrollment;
+};
+
+const complete = async (req, res) => {
+  try {
+    if (typeof req.body.complete !== "boolean") {
+      return res.status(400).json({ error: "Lesson completion must be a boolean." });
+    }
+
+    const current = await synchronizeProgress(req.enrollment);
+
+    const status = current.lessonStatus.id(req.body.lessonStatusId);
+
+    if (!status) {
+      return res.status(400).json({ error: "Lesson status does not belong to this enrollment." });
+    }
+
+    await Enrollment.updateOne(
+      { _id: current._id, student: req.auth._id, "lessonStatus._id": status._id },
+      { $set: { "lessonStatus.$.complete": req.body.complete, updated: new Date() } },
+    );
+    // Derive completion from persisted progress, including concurrent changes.
+    await Enrollment.updateOne(
+      {
+        _id: current._id,
+        "lessonStatus.0": { $exists: true },
+        lessonStatus: { $not: { $elemMatch: { complete: false } } },
+        completed: { $exists: false },
+      },
+      { $set: { completed: new Date() } },
+    );
+    await Enrollment.updateOne(
+      {
+        _id: current._id,
+        $or: [
+          { lessonStatus: { $elemMatch: { complete: false } } },
+          { lessonStatus: { $size: 0 } },
+        ],
+      },
+      { $unset: { completed: 1 } },
+    );
+
+    const enrollment = await Enrollment.findById(current._id)
+      .populate({ path: "course", populate: { path: "instructor", select: "_id name" } })
+      .populate("student", "_id name");
+
+    return res.json(enrollment);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+const enrollmentStats = async (req, res) => {
+  try {
+    const enrollments = await Enrollment.find({ course: req.course._id }).select("lessonStatus");
+
+    res.json({
+      totalEnrolled: enrollments.length,
+      totalCompleted: enrollments.filter((item) =>
+        isCourseComplete(alignLessonStatus(req.course.lessons, item.lessonStatus)),
+      ).length,
+    });
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled, complete, enrollmentStats };
