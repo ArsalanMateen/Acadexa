@@ -1,1 +1,1 @@
-body { font-family: system-ui, sans-serif; }
+@import "./shared/styles/globals.css";
