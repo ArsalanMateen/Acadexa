@@ -7,4 +7,7 @@ const create = (user) =>
     body: JSON.stringify(user),
   });
 
-export { create };
+const read = (params, credentials, signal) =>
+  request(`/api/users/${params.userId}`, { headers: authorization(credentials), signal });
+
+export { create, read };
