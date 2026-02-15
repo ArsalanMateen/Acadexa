@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import CourseCard from "../components/CourseCard";
 import { listPublished } from "../course";
 
 export default function Courses() {
@@ -14,5 +15,5 @@ export default function Courses() {
     });
     return () => controller.abort();
   }, []);
-  return <main><h1>Published courses</h1>{loading ? <p role="status">Loading courses</p> : error ? <p role="alert">{error}</p> : courses.map(course => <p key={course._id}>{course.name}</p>)}</main>;
+  return <main><h1>Published courses</h1>{loading ? <p role="status">Loading courses</p> : error ? <p role="alert">{error}</p> : courses.map(course => <CourseCard key={course._id} course={course} />)}</main>;
 }
