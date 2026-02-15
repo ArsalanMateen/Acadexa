@@ -1,1 +1,18 @@
-export default function Courses() { return <main><h1>Published courses</h1></main>; }
+import { useState, useEffect } from "react";
+import { listPublished } from "../course";
+
+export default function Courses() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    listPublished(controller.signal).then(data => {
+      if (controller.signal.aborted) return;
+      if (Array.isArray(data)) setCourses(data); else setError(data?.error || "Unable to load courses.");
+      setLoading(false);
+    });
+    return () => controller.abort();
+  }, []);
+  return <main><h1>Published courses</h1>{loading ? <p role="status">Loading courses</p> : error ? <p role="alert">{error}</p> : courses.map(course => <p key={course._id}>{course.name}</p>)}</main>;
+}
