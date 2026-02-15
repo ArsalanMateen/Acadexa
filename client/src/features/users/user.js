@@ -7,4 +7,14 @@ const create = (user) =>
     body: JSON.stringify(user),
   });
 
-export { create };
+const read = (params, credentials, signal) =>
+  request(`/api/users/${params.userId}`, { headers: authorization(credentials), signal });
+
+const update = (params, credentials, user) =>
+  request(`/api/users/${params.userId}`, {
+    method: "PUT",
+    headers: { ...authorization(credentials), "Content-Type": "application/json" },
+    body: JSON.stringify(user),
+  });
+
+export { create, read, update };
