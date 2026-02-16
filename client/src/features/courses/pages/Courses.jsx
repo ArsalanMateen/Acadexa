@@ -15,5 +15,5 @@ export default function Courses() {
     });
     return () => controller.abort();
   }, []);
-  return <main><h1>Published courses</h1>{loading ? <p role="status">Loading courses</p> : error ? <p role="alert">{error}</p> : courses.map(course => <CourseCard key={course._id} course={course} />)}</main>;
+  return <main><h1>Published courses</h1>{loading ? <p role="status">Loading courses</p> : error ? <p role="alert">{error}</p> : courses.length === 0 ? <p>Published courses will appear here.</p> : courses.map(course => <CourseCard key={course._id} course={course} />)}</main>;
 }
