@@ -4,6 +4,7 @@ import Signin from "../features/auth/pages/Signin.jsx";
 import Profile from "../features/users/pages/Profile.jsx";
 import EditProfile from "../features/users/pages/EditProfile.jsx";
 import Courses from "../features/courses/pages/Courses.jsx";
+import Course from "../features/courses/pages/Course.jsx";
 import Navbar from "./layout/Navbar";
 import PrivateRoute from "./PrivateRoute";
 
@@ -13,5 +14,6 @@ export default function App() {
 <Route path="/user/:userId" element={<PrivateRoute><Profile /></PrivateRoute>} />
 <Route path="/user/edit/:userId" element={<PrivateRoute><EditProfile /></PrivateRoute>} />
 <Route path="/" element={<Courses />} />
-<Route path="/courses" element={<Courses />} /><Route path="*" element={<p>Acadexa</p>} /></Routes></main></div></BrowserRouter>);
+<Route path="/courses" element={<Courses />} />
+<Route path="/course/:courseId" element={<Course />} /><Route path="*" element={<p>Acadexa</p>} /></Routes></main></div></BrowserRouter>);
 }
