@@ -11,4 +11,11 @@ const read = (params, signal, credentials) =>
 const listByInstructor = (params, credentials, signal) =>
   request(`/api/courses/by/${params.userId}`, { headers: authorization(credentials), signal });
 
-export { listPublished, read, listByInstructor };
+const create = (params, credentials, course) =>
+  request(`/api/courses/by/${params.userId}`, {
+    method: "POST",
+    headers: authorization(credentials),
+    body: course,
+  });
+
+export { listPublished, read, listByInstructor, create };

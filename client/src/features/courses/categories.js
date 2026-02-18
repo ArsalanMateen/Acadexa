@@ -1,0 +1,16 @@
+export const categories = [
+  "Web Development",
+  "Programming",
+  "Backend Development",
+  "Databases",
+  "Computer Science",
+  "Data Science",
+  "Data Science & AI",
+  "AI & Machine Learning",
+  "Developer Tools",
+  "DevOps",
+  "Software Engineering",
+  "UI/UX Design",
+  "Business & Management",
+  "General Science",
+];

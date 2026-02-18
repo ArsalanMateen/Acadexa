@@ -6,6 +6,7 @@ import EditProfile from "../features/users/pages/EditProfile.jsx";
 import Courses from "../features/courses/pages/Courses.jsx";
 import Course from "../features/courses/pages/Course.jsx";
 import MyCourses from "../features/courses/pages/MyCourses.jsx";
+import NewCourse from "../features/courses/pages/NewCourse.jsx";
 import Navbar from "./layout/Navbar";
 import PrivateRoute from "./PrivateRoute";
 
@@ -17,5 +18,6 @@ export default function App() {
 <Route path="/" element={<Courses />} />
 <Route path="/courses" element={<Courses />} />
 <Route path="/course/:courseId" element={<Course />} />
-<Route path="/teach/courses" element={<PrivateRoute instructorOnly><MyCourses /></PrivateRoute>} /><Route path="*" element={<p>Acadexa</p>} /></Routes></main></div></BrowserRouter>);
+<Route path="/teach/courses" element={<PrivateRoute instructorOnly><MyCourses /></PrivateRoute>} />
+<Route path="/teach/course/new" element={<PrivateRoute instructorOnly><NewCourse /></PrivateRoute>} /><Route path="*" element={<p>Acadexa</p>} /></Routes></main></div></BrowserRouter>);
 }
