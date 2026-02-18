@@ -32,7 +32,9 @@ export default function EditCourse() {
   const addLesson = event => {
     event.preventDefault();
     if (!lesson.title.trim()) { setError("Lesson title is required."); return; }
-    const lessons = [...course.lessons, lesson];
+    const lessons = [...course.lessons];
+    if (editingIndex === null) lessons.push(lesson);
+    else lessons[editingIndex] = { ...lessons[editingIndex], ...lesson };
     return saveLessons(lessons);
   };
   const save = async event => {
@@ -46,5 +48,5 @@ export default function EditCourse() {
     setSaving(false);
   };
   if (!course) return <p role={error ? "alert" : "status"}>{error || "Loading course editor"}</p>;
-  return <main><h1>Edit course</h1>{error && <p role="alert">{error}</p>}<form onSubmit={save}>{["name", "description", "category"].map(field => <label key={field}>{field}<input value={course[field] || ""} onChange={event => setCourse({ ...course, [field]: event.target.value })} /></label>)}<label><input type="checkbox" checked={course.published} onChange={event => setCourse({ ...course, published: event.target.checked })} />Published</label><button disabled={saving}>Save</button></form><section><h2>Lessons</h2><ol>{course.lessons.map((item, index) => <li key={item._id}>{item.title}</li>)}</ol><form onSubmit={addLesson}>{["title", "content", "resource_url"].map(field => <label key={field}>{field}<input value={lesson[field]} onChange={event => setLesson({ ...lesson, [field]: event.target.value })} /></label>)}<button disabled={saving}>Add lesson</button></form></section></main>;
+  return <main><h1>Edit course</h1>{error && <p role="alert">{error}</p>}<form onSubmit={save}>{["name", "description", "category"].map(field => <label key={field}>{field}<input value={course[field] || ""} onChange={event => setCourse({ ...course, [field]: event.target.value })} /></label>)}<label><input type="checkbox" checked={course.published} onChange={event => setCourse({ ...course, published: event.target.checked })} />Published</label><button disabled={saving}>Save</button></form><section><h2>Lessons</h2><ol>{course.lessons.map((item, index) => <li key={item._id}>{item.title}<button type="button" disabled={saving} onClick={() => { setLesson({ title: item.title, content: item.content || "", resource_url: item.resource_url || "" }); setEditingIndex(index); }}>Edit</button></li>)}</ol><form onSubmit={addLesson}>{["title", "content", "resource_url"].map(field => <label key={field}>{field}<input value={lesson[field]} onChange={event => setLesson({ ...lesson, [field]: event.target.value })} /></label>)}<button disabled={saving}>{editingIndex === null ? "Add lesson" : "Update lesson"}</button></form></section></main>;
 }
