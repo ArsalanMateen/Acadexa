@@ -8,4 +8,7 @@ const read = (params, signal, credentials) =>
     ...(credentials?.t ? { headers: authorization(credentials) } : {}),
   });
 
-export { listPublished, read };
+const listByInstructor = (params, credentials, signal) =>
+  request(`/api/courses/by/${params.userId}`, { headers: authorization(credentials), signal });
+
+export { listPublished, read, listByInstructor };
