@@ -8,4 +8,21 @@ const read = (params, signal, credentials) =>
     ...(credentials?.t ? { headers: authorization(credentials) } : {}),
   });
 
-export { listPublished, read };
+const listByInstructor = (params, credentials, signal) =>
+  request(`/api/courses/by/${params.userId}`, { headers: authorization(credentials), signal });
+
+const create = (params, credentials, course) =>
+  request(`/api/courses/by/${params.userId}`, {
+    method: "POST",
+    headers: authorization(credentials),
+    body: course,
+  });
+
+const update = (params, credentials, course) =>
+  request(`/api/courses/${params.courseId}`, {
+    method: "PUT",
+    headers: authorization(credentials),
+    body: course,
+  });
+
+export { listPublished, read, listByInstructor, create, update };
