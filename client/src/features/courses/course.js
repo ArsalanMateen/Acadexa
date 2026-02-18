@@ -18,4 +18,11 @@ const create = (params, credentials, course) =>
     body: course,
   });
 
-export { listPublished, read, listByInstructor, create };
+const update = (params, credentials, course) =>
+  request(`/api/courses/${params.courseId}`, {
+    method: "PUT",
+    headers: authorization(credentials),
+    body: course,
+  });
+
+export { listPublished, read, listByInstructor, create, update };
