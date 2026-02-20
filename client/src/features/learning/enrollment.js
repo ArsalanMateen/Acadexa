@@ -15,4 +15,11 @@ const read = (params, credentials, signal) =>
 const listEnrolled = (credentials, signal) =>
   request("/api/enrollment/enrolled", { headers: authorization(credentials), signal });
 
-export { create, read, listEnrolled };
+const complete = (params, credentials, enrollmentData) =>
+  request(`/api/enrollment/complete/${params.enrollmentId}`, {
+    method: "PUT",
+    headers: { ...authorization(credentials), "Content-Type": "application/json" },
+    body: JSON.stringify(enrollmentData),
+  });
+
+export { create, read, listEnrolled, complete };
