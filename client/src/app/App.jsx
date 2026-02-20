@@ -8,6 +8,8 @@ import Course from "../features/courses/pages/Course.jsx";
 import MyCourses from "../features/courses/pages/MyCourses.jsx";
 import NewCourse from "../features/courses/pages/NewCourse.jsx";
 import EditCourse from "../features/courses/pages/EditCourse.jsx";
+import MyLearning from "../features/learning/pages/MyLearning.jsx";
+import Enrollment from "../features/learning/pages/Enrollment.jsx";
 import Navbar from "./layout/Navbar";
 import PrivateRoute from "./PrivateRoute";
 
@@ -21,5 +23,8 @@ export default function App() {
 <Route path="/course/:courseId" element={<Course />} />
 <Route path="/teach/courses" element={<PrivateRoute instructorOnly><MyCourses /></PrivateRoute>} />
 <Route path="/teach/course/new" element={<PrivateRoute instructorOnly><NewCourse /></PrivateRoute>} />
-<Route path="/teach/course/edit/:courseId" element={<PrivateRoute instructorOnly><EditCourse /></PrivateRoute>} /><Route path="*" element={<p>Acadexa</p>} /></Routes></main></div></BrowserRouter>);
+<Route path="/teach/course/edit/:courseId" element={<PrivateRoute instructorOnly><EditCourse /></PrivateRoute>} />
+<Route path="/learning" element={<PrivateRoute><MyLearning /></PrivateRoute>} />
+<Route path="/learn" element={<PrivateRoute><MyLearning /></PrivateRoute>} />
+<Route path="/learn/:enrollmentId" element={<PrivateRoute><Enrollment /></PrivateRoute>} /><Route path="*" element={<p>Acadexa</p>} /></Routes></main></div></BrowserRouter>);
 }
