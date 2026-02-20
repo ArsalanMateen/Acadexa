@@ -12,7 +12,11 @@ export default function Enrollment() {
     const controller = new AbortController();
     read({ enrollmentId }, { t: auth.token }, controller.signal).then(data => {
       if (controller.signal.aborted) return;
-      if (data?.error) setError(data.error); else setEnrollment(data);
+      if (data?.error) setError(data.error); else {
+        setEnrollment(data);
+        const first = (data.course?.lessons || []).findIndex(lesson => !data.lessonStatus?.find(status => String(status.lesson) === String(lesson._id))?.complete);
+        setActiveLessonIndex(first >= 0 ? first : Math.max(0, (data.course?.lessons.length || 1) - 1));
+      }
     });
     return () => controller.abort();
   }, [enrollmentId, auth]);

@@ -16,5 +16,5 @@ export default function MyLearning() {
     });
     return () => controller.abort();
   }, [auth]);
-  return <main><h1>My learning</h1>{loading ? <p role="status">Loading courses</p> : error ? <p role="alert">{error}</p> : enrolled.length === 0 ? <p>No enrolled courses yet.</p> : enrolled.map(item => <Link key={item._id} to={`/learn/${item._id}`}>{item.course.name}</Link>)}</main>;
+  return <main><h1>My learning</h1>{loading ? <p role="status">Loading courses</p> : error ? <p role="alert">{error}</p> : enrolled.length === 0 ? <p>No enrolled courses yet.</p> : enrolled.map(item => <Link key={item._id} to={`/learn/${item._id}`}>{item.course.name}<span>{item.lessonStatus.filter(status => status.complete).length} of {item.course.lessons.length} completed</span></Link>)}</main>;
 }
