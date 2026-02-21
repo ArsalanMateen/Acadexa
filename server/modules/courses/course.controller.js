@@ -131,7 +131,7 @@ const listPublished = async (req, res) => {
     const query = publishedQuery(req.query);
     const [rows, totalCount] = await Promise.all([
       Course.find(query.filter).sort({ created: -1, _id: -1 }).limit(query.limit + 1).populate("instructor", "_id name").lean().exec(),
-      Course.countDocuments({ published: true }),
+      query.initial ? Course.countDocuments({ published: true }) : Promise.resolve(null),
     ]);
     const hasMore = rows.length > query.limit;
     const courses = rows.slice(0, query.limit);
