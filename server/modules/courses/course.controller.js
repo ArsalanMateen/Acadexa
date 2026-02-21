@@ -1,7 +1,7 @@
 import Course from "./course.model.js";
 import errorHandler from "../../lib/dbErrorHandler.js";
 import formidable from "formidable";
-import { publishedCourseCard } from "./coursePagination.js";
+import { publishedQuery, encodeCourseCursor, publishedCourseCard } from "./coursePagination.js";
 
 const parseCourseForm = (req, res, edit = false) => {
   const form = new formidable.IncomingForm();
@@ -128,11 +128,15 @@ const update = (req, res) => parseCourseForm(req, res, true);
 
 const listPublished = async (req, res) => {
   try {
-    const courses = await Course.find({ published: true }).populate("instructor", "_id name").lean().exec();
-    return res.json(courses.map(publishedCourseCard));
-  } catch (err) {
-    return res.status(400).json({ error: errorHandler.getErrorMessage(err) });
-  }
+    const query = publishedQuery(req.query);
+    const [rows, totalCount] = await Promise.all([
+      Course.find(query.filter).sort({ created: -1, _id: -1 }).limit(query.limit + 1).populate("instructor", "_id name").lean().exec(),
+      Course.countDocuments({ published: true }),
+    ]);
+    const hasMore = rows.length > query.limit;
+    const courses = rows.slice(0, query.limit);
+    return res.json({ courses: courses.map(publishedCourseCard), totalCount, hasMore, nextCursor: hasMore ? encodeCourseCursor(courses[courses.length - 1]) : null });
+  } catch (error) { return res.status(400).json({ error: errorHandler.getErrorMessage(error) }); }
 };
 
 const newLesson = async (req, res) => {

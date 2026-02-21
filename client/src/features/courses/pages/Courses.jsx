@@ -8,9 +8,9 @@ export default function Courses() {
   const [error, setError] = useState("");
   useEffect(() => {
     const controller = new AbortController();
-    listPublished(controller.signal).then(data => {
+    listPublished({}, controller.signal).then(data => {
       if (controller.signal.aborted) return;
-      if (Array.isArray(data)) setCourses(data); else setError(data?.error || "Unable to load courses.");
+      if (Array.isArray(data?.courses)) setCourses(data.courses); else setError(data?.error || "Unable to load courses.");
       setLoading(false);
     });
     return () => controller.abort();
