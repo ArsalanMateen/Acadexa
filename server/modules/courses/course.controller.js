@@ -1,6 +1,7 @@
 import Course from "./course.model.js";
 import errorHandler from "../../lib/dbErrorHandler.js";
 import formidable from "formidable";
+import { publishedCourseCard } from "./coursePagination.js";
 
 const parseCourseForm = (req, res, edit = false) => {
   const form = new formidable.IncomingForm();
@@ -128,7 +129,7 @@ const update = (req, res) => parseCourseForm(req, res, true);
 const listPublished = async (req, res) => {
   try {
     const courses = await Course.find({ published: true }).populate("instructor", "_id name").lean().exec();
-    return res.json(courses);
+    return res.json(courses.map(publishedCourseCard));
   } catch (err) {
     return res.status(400).json({ error: errorHandler.getErrorMessage(err) });
   }
