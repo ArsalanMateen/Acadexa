@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../../shared/session/auth-helper";
+import { safeHttpUrl } from "../../../shared/utils/resources";
 import { read, update } from "../course";
 
 export default function EditCourse() {
@@ -32,6 +33,7 @@ export default function EditCourse() {
   const addLesson = event => {
     event.preventDefault();
     if (!lesson.title.trim()) { setError("Lesson title is required."); return; }
+    if (lesson.resource_url && !safeHttpUrl(lesson.resource_url)) { setError("Resource URL must start with http:// or https://"); return; }
     const lessons = [...course.lessons];
     if (editingIndex === null) lessons.push(lesson);
     else lessons[editingIndex] = { ...lessons[editingIndex], ...lesson };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../../shared/session/auth-helper";
+import { safeHttpUrl, getEmbedUrl, isDirectVideo } from "../../../shared/utils/resources";
 import { read, complete } from "../enrollment";
 export default function Enrollment() {
   const { enrollmentId } = useParams();
@@ -36,5 +37,5 @@ export default function Enrollment() {
   const lessons = enrollment.course.lessons || [];
   if (!lessons.length) return <p>Your instructor hasn't added lessons yet.</p>;
   const currentLesson = lessons[activeLessonIndex] || lessons[0];
-  return <main><h1>{enrollment.course.name}</h1><nav aria-label="Lessons">{lessons.map((lesson, index) => <button key={lesson._id} onClick={() => setActiveLessonIndex(index)}>{lesson.title}</button>)}</nav><h2>{currentLesson.title}</h2><p style={{ whiteSpace: "pre-wrap" }}>{currentLesson.content}</p><button disabled={saving} onClick={markComplete}>Toggle completion</button></main>;
+  return <main><h1>{enrollment.course.name}</h1><nav aria-label="Lessons">{lessons.map((lesson, index) => <button key={lesson._id} onClick={() => setActiveLessonIndex(index)}>{lesson.title}</button>)}</nav><h2>{currentLesson.title}</h2>{getEmbedUrl(currentLesson.resource_url) ? <iframe src={getEmbedUrl(currentLesson.resource_url)} title={currentLesson.title} allowFullScreen /> : isDirectVideo(currentLesson.resource_url) ? <video controls src={safeHttpUrl(currentLesson.resource_url)} /> : null}<p style={{ whiteSpace: "pre-wrap" }}>{currentLesson.content}</p>{safeHttpUrl(currentLesson.resource_url) && <a href={safeHttpUrl(currentLesson.resource_url)} target="_blank" rel="noopener noreferrer">Lesson resource</a>}<button disabled={saving} onClick={markComplete}>Toggle completion</button></main>;
 }
