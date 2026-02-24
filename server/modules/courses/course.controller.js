@@ -1,6 +1,7 @@
 import Course from "./course.model.js";
 import errorHandler from "../../lib/dbErrorHandler.js";
 import formidable from "formidable";
+import { publishedQuery, encodeCourseCursor, publishedCourseCard } from "./coursePagination.js";
 
 const parseCourseForm = (req, res, edit = false) => {
   const form = new formidable.IncomingForm();
@@ -126,11 +127,50 @@ const isInstructor = (req, res, next) => {
 const update = (req, res) => parseCourseForm(req, res, true);
 
 const listPublished = async (req, res) => {
+  let query;
+
   try {
-    const courses = await Course.find({ published: true }).populate("instructor", "_id name").lean().exec();
-    return res.json(courses);
+    query = publishedQuery(req.query);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  try {
+    // Fail explicitly for legacy records instead of silently losing them at a page boundary.
+    if (
+      query.initial &&
+      (await Course.exists({ published: true, $expr: { $ne: [{ $type: "$created" }, "date"] } }))
+    ) {
+      return res.status(409).json({
+        error:
+          "The catalog contains courses with missing creation dates. Please contact the administrator.",
+      });
+    }
+
+    const [rows, totalCount] = await Promise.all([
+      Course.find(query.filter)
+        .select("_id name description category image instructor created lessons._id")
+        .sort({ created: -1, _id: -1 })
+        .limit(query.limit + 1)
+        .populate("instructor", "_id name")
+        .lean()
+        .exec(),
+      query.initial ? Course.countDocuments({ published: true }) : Promise.resolve(null),
+    ]);
+
+    const hasMore = rows.length > query.limit;
+    const courses = rows.slice(0, query.limit);
+
+    return res.json({
+      courses: courses.map(publishedCourseCard),
+      totalCount,
+      hasMore,
+      nextCursor: hasMore ? encodeCourseCursor(courses[courses.length - 1]) : null,
+    });
   } catch (err) {
-    return res.status(400).json({ error: errorHandler.getErrorMessage(err) });
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
   }
 };
 
