@@ -39,6 +39,9 @@ const CourseSchema = new mongoose.Schema({
 });
 
 
+CourseSchema.index({ published: 1, created: -1, _id: -1 });
+CourseSchema.index({ instructor: 1 });
+
 const Course = mongoose.model("Course", CourseSchema);
 
 export { Lesson };
