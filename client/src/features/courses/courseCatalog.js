@@ -38,14 +38,35 @@ export function createCourseCatalog(loader) {
     });
 
     try {
-      const page = await loader({ limit: 12, ...(cursor ? { cursor } : {}) }, controller.signal);
+      const page = await loader(
+        { limit: 12, ...(cursor ? { cursor } : {}) },
+        controller.signal,
+      );
 
       if (controller.signal.aborted || generation !== currentGeneration) return;
       if (page?.aborted) {
         throw new Error("The request was interrupted. Please try again.");
       }
       if (page?.error) throw new Error(page.error);
-      if (!Array.isArray(page?.courses)) throw new Error("Unable to load courses. Please try again.");
+      if (
+        !Array.isArray(page?.courses) ||
+        page.courses.some(
+          (item) => typeof item?._id !== "string" || !item._id,
+        ) ||
+        typeof page.hasMore !== "boolean" ||
+        (cursor
+          ? page.totalCount !== null
+          : !Number.isSafeInteger(page.totalCount) || page.totalCount < 0) ||
+        (page.hasMore
+          ? !page.courses.length ||
+            typeof page.nextCursor !== "string" ||
+            !page.nextCursor ||
+            page.nextCursor === cursor ||
+            completedCursors.has(page.nextCursor)
+          : page.nextCursor !== null)
+      ) {
+        throw new Error("Unable to load courses. Please try again.");
+      }
 
       const existing = cursor ? state.courses : [];
       const ids = new Set(existing.map((course) => course._id));
@@ -105,6 +126,8 @@ export function createCourseCatalog(loader) {
     },
     cancel,
     loadMore: () =>
-      !state.loading && state.hasMore ? fetchPage(state.nextCursor) : Promise.resolve(),
+      !state.loading && state.hasMore
+        ? fetchPage(state.nextCursor)
+        : Promise.resolve(),
   };
 }
