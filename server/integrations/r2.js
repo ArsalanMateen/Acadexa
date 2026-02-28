@@ -1,5 +1,9 @@
 import fs from "fs/promises";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import config from "../config/config.js";
 
 const s3Client = new S3Client({
@@ -48,10 +52,27 @@ export const uploadCourseImage = async (file, courseId) => {
 
   const fileData = await fs.readFile(file.path);
 
-  if (fileData.length > 5 * 1024 * 1024) throw new Error("Image must be under 5 MB.");
+  if (fileData.length > 5 * 1024 * 1024)
+    throw new Error("Image must be under 5 MB.");
 
   const contentType = file.type;
   const ext = getExtension(contentType);
+  const valid =
+    ext === "png"
+      ? fileData
+          .subarray(0, 8)
+          .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+      : ext === "webp"
+        ? fileData.toString("ascii", 0, 4) === "RIFF" &&
+          fileData.toString("ascii", 8, 12) === "WEBP"
+        : fileData[0] === 255 && fileData[1] === 216 && fileData[2] === 255;
+
+  if (!valid) {
+    throw new Error(
+      "The file does not contain a valid PNG, JPG or WebP image.",
+    );
+  }
+
   const key = `courses/${courseId}-${Date.now()}.${ext}`;
 
   await s3Client.send(
@@ -63,7 +84,7 @@ export const uploadCourseImage = async (file, courseId) => {
     }),
   );
 
-  const baseUrl = (config.r2.publicUrl || "").replace(/\/$/, "");
+  const baseUrl = config.r2.publicUrl.replace(/\/$/, "");
 
   return `${baseUrl}/${key}`;
 };
@@ -77,7 +98,11 @@ export const deleteCourseImage = async (imageUrl) => {
 
   const baseUrl = (config.r2.publicUrl || "").replace(/\/$/, "");
 
-  if (!baseUrl || typeof imageUrl !== "string" || !imageUrl.startsWith(`${baseUrl}/courses/`)) {
+  if (
+    !baseUrl ||
+    typeof imageUrl !== "string" ||
+    !imageUrl.startsWith(`${baseUrl}/courses/`)
+  ) {
     return;
   }
 
