@@ -2,6 +2,7 @@ import Course from "./course.model.js";
 import errorHandler from "../../lib/dbErrorHandler.js";
 import formidable from "formidable";
 import { publishedQuery, encodeCourseCursor, publishedCourseCard } from "./coursePagination.js";
+import r2Helper from "../../integrations/r2.js";
 
 const parseCourseForm = (req, res, edit = false) => {
   const form = new formidable.IncomingForm();
@@ -44,7 +45,7 @@ const parseCourseForm = (req, res, edit = false) => {
       }
       course.updated = new Date();
       await course.validate();
-      
+      if (files.image?.size > 0) course.image = await r2Helper.uploadCourseImage(files.image, course._id);
       const result = await course.save();
       await result.populate("instructor", "_id name").execPopulate();
       return res.json(result);
