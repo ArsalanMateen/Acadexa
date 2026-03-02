@@ -3,17 +3,34 @@ import errorHandler from "../../lib/dbErrorHandler.js";
 import formidable from "formidable";
 import { publishedQuery, encodeCourseCursor, publishedCourseCard } from "./coursePagination.js";
 import r2Helper from "../../integrations/r2.js";
+import fs from "fs/promises";
 
 const parseCourseForm = (req, res, edit = false) => {
   const form = new formidable.IncomingForm();
   form.keepExtensions = true;
-  form.parse(req, async (error, fields, files) => {
+  form.maxFileSize = 5 * 1024 * 1024;
+
+  const temporaryFiles = new Set();
+  form.on("fileBegin", (name, file) => temporaryFiles.add(file));
+
+  form.parse(req, async (parseError, fields, files) => {
+    let uploadedImage;
+    let saved = false;
+
     try {
-      if (error) throw error;
-      const course = edit ? req.course : new Course({ instructor: req.profile._id });
-      for (const field of ["name", "description", "category", "published"]) {
-        if (Object.prototype.hasOwnProperty.call(fields, field)) course[field] = fields[field];
+      if (parseError) {
+        throw new Error("Image must be a PNG, JPG or WebP file under 5 MB.");
       }
+
+      const course = edit ? req.course : new Course({ instructor: req.profile._id });
+      const previousImage = course.image;
+
+      for (const field of ["name", "description", "category", "published"]) {
+        if (Object.prototype.hasOwnProperty.call(fields, field)) {
+          course[field] = fields[field];
+        }
+      }
+
       if (Object.prototype.hasOwnProperty.call(fields, "lessons")) {
         const lessons =
           typeof fields.lessons === "string" ? JSON.parse(fields.lessons) : fields.lessons;
@@ -43,14 +60,35 @@ const parseCourseForm = (req, res, edit = false) => {
           };
         });
       }
+
       course.updated = new Date();
+
       await course.validate();
-      if (files.image?.size > 0) course.image = await r2Helper.uploadCourseImage(files.image, course._id);
+
+      if (files.image?.size > 0) {
+        uploadedImage = await r2Helper.uploadCourseImage(files.image, course._id);
+
+        course.image = uploadedImage;
+      }
+
       const result = await course.save();
+      saved = true;
+
       await result.populate("instructor", "_id name").execPopulate();
+
+      if (uploadedImage && previousImage) await r2Helper.deleteCourseImage(previousImage);
+
       return res.json(result);
-    } catch (err) {
-      return res.status(400).json({ error: errorHandler.getErrorMessage(err) });
+    } catch (error) {
+      if (uploadedImage && !saved) await r2Helper.deleteCourseImage(uploadedImage);
+
+      return res.status(400).json({ error: errorHandler.getErrorMessage(error) });
+    } finally {
+      await Promise.all(
+        [...temporaryFiles, ...Object.values(files || {})].map(
+          (file) => file.path && fs.unlink(file.path).catch(() => {}),
+        ),
+      );
     }
   });
 };
