@@ -237,4 +237,27 @@ const newLesson = async (req, res) => {
   }
 };
 
-export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson };
+const photo = (req, res, next) => {
+  if (req.course.image) {
+    if (typeof req.course.image === "string" && req.course.image.trim()) {
+      return res.redirect(req.course.image);
+    }
+    if (req.course.image.data) {
+      res.set("Content-Type", req.course.image.contentType);
+      return res.send(req.course.image.data);
+    }
+  }
+
+  next();
+};
+
+const defaultPhoto = (req, res) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="338" viewBox="0 0 600 338"><rect width="600" height="338" fill="#f1f5f9"/><g transform="translate(272 141)" fill="none" stroke="#94a3b8" stroke-width="3"><path d="M0 6c9-4 19-4 28 0v40c-9-4-19-4-28 0zM28 6c9-4 19-4 28 0v40c-9-4-19-4-28 0z"/></g></svg>`;
+
+  res.set("Content-Type", "image/svg+xml");
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+
+  return res.send(svg);
+};
+
+export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson, photo, defaultPhoto };
