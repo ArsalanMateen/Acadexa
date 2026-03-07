@@ -2,17 +2,35 @@ import Course from "./course.model.js";
 import errorHandler from "../../lib/dbErrorHandler.js";
 import formidable from "formidable";
 import { publishedQuery, encodeCourseCursor, publishedCourseCard } from "./coursePagination.js";
+import r2Helper from "../../integrations/r2.js";
+import fs from "fs/promises";
 
 const parseCourseForm = (req, res, edit = false) => {
   const form = new formidable.IncomingForm();
   form.keepExtensions = true;
-  form.parse(req, async (error, fields, files) => {
+  form.maxFileSize = 5 * 1024 * 1024;
+
+  const temporaryFiles = new Set();
+  form.on("fileBegin", (name, file) => temporaryFiles.add(file));
+
+  form.parse(req, async (parseError, fields, files) => {
+    let uploadedImage;
+    let saved = false;
+
     try {
-      if (error) throw error;
-      const course = edit ? req.course : new Course({ instructor: req.profile._id });
-      for (const field of ["name", "description", "category", "published"]) {
-        if (Object.prototype.hasOwnProperty.call(fields, field)) course[field] = fields[field];
+      if (parseError) {
+        throw new Error("Image must be a PNG, JPG or WebP file under 5 MB.");
       }
+
+      const course = edit ? req.course : new Course({ instructor: req.profile._id });
+      const previousImage = course.image;
+
+      for (const field of ["name", "description", "category", "published"]) {
+        if (Object.prototype.hasOwnProperty.call(fields, field)) {
+          course[field] = fields[field];
+        }
+      }
+
       if (Object.prototype.hasOwnProperty.call(fields, "lessons")) {
         const lessons =
           typeof fields.lessons === "string" ? JSON.parse(fields.lessons) : fields.lessons;
@@ -42,14 +60,35 @@ const parseCourseForm = (req, res, edit = false) => {
           };
         });
       }
+
       course.updated = new Date();
+
       await course.validate();
-      
+
+      if (files.image?.size > 0) {
+        uploadedImage = await r2Helper.uploadCourseImage(files.image, course._id);
+
+        course.image = uploadedImage;
+      }
+
       const result = await course.save();
+      saved = true;
+
       await result.populate("instructor", "_id name").execPopulate();
+
+      if (uploadedImage && previousImage) await r2Helper.deleteCourseImage(previousImage);
+
       return res.json(result);
-    } catch (err) {
-      return res.status(400).json({ error: errorHandler.getErrorMessage(err) });
+    } catch (error) {
+      if (uploadedImage && !saved) await r2Helper.deleteCourseImage(uploadedImage);
+
+      return res.status(400).json({ error: errorHandler.getErrorMessage(error) });
+    } finally {
+      await Promise.all(
+        [...temporaryFiles, ...Object.values(files || {})].map(
+          (file) => file.path && fs.unlink(file.path).catch(() => {}),
+        ),
+      );
     }
   });
 };
@@ -198,4 +237,27 @@ const newLesson = async (req, res) => {
   }
 };
 
-export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson };
+const photo = (req, res, next) => {
+  if (req.course.image) {
+    if (typeof req.course.image === "string" && req.course.image.trim()) {
+      return res.redirect(req.course.image);
+    }
+    if (req.course.image.data) {
+      res.set("Content-Type", req.course.image.contentType);
+      return res.send(req.course.image.data);
+    }
+  }
+
+  next();
+};
+
+const defaultPhoto = (req, res) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="338" viewBox="0 0 600 338"><rect width="600" height="338" fill="#f1f5f9"/><g transform="translate(272 141)" fill="none" stroke="#94a3b8" stroke-width="3"><path d="M0 6c9-4 19-4 28 0v40c-9-4-19-4-28 0zM28 6c9-4 19-4 28 0v40c-9-4-19-4-28 0z"/></g></svg>`;
+
+  res.set("Content-Type", "image/svg+xml");
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+
+  return res.send(svg);
+};
+
+export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson, photo, defaultPhoto };
