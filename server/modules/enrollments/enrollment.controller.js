@@ -274,4 +274,23 @@ const enrollmentStatsByInstructor = async (req, res) => {
   }
 };
 
-export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled, complete, enrollmentStats, enrollmentStatsByInstructor };
+const enrollmentForCourse = async (req, res) => {
+  const id = req.params.targetCourseId;
+
+  if (typeof id !== "string" || !/^[a-f\d]{24}$/i.test(id)) {
+    return res.status(400).json({ error: "Invalid course ID." });
+  }
+
+  try {
+    const enrollment = await Enrollment.findOne({ course: id, student: req.auth._id })
+      .select("_id")
+      .lean()
+      .exec();
+
+    return res.json({ enrollmentId: enrollment ? String(enrollment._id) : null });
+  } catch {
+    return res.status(500).json({ error: "Unable to check enrollment." });
+  }
+};
+
+export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled, complete, enrollmentStats, enrollmentStatsByInstructor, enrollmentForCourse };
