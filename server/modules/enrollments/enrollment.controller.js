@@ -230,4 +230,67 @@ const enrollmentStats = async (req, res) => {
   }
 };
 
-export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled, complete, enrollmentStats };
+const enrollmentStatsByInstructor = async (req, res) => {
+  try {
+    const courses = await Course.find({ instructor: req.auth._id })
+      .select("_id lessons._id")
+      .lean()
+      .exec();
+
+    const stats = {};
+    const curricula = new Map();
+
+    for (const course of courses) {
+      const id = String(course._id);
+
+      stats[id] = { totalEnrolled: 0, totalCompleted: 0 };
+      curricula.set(id, course.lessons || []);
+    }
+
+    if (!courses.length) return res.json(stats);
+
+    const enrollments = await Enrollment.find({
+      course: { $in: courses.map((course) => course._id) },
+    })
+      .select("course lessonStatus")
+      .lean()
+      .exec();
+
+    for (const enrollment of enrollments) {
+      const id = String(enrollment.course);
+
+      if (!curricula.has(id)) continue;
+
+      stats[id].totalEnrolled++;
+
+      if (isCourseComplete(alignLessonStatus(curricula.get(id), enrollment.lessonStatus || []))) {
+        stats[id].totalCompleted++;
+      }
+    }
+
+    return res.json(stats);
+  } catch {
+    return res.status(500).json({ error: "Unable to load enrollment statistics." });
+  }
+};
+
+const enrollmentForCourse = async (req, res) => {
+  const id = req.params.targetCourseId;
+
+  if (typeof id !== "string" || !/^[a-f\d]{24}$/i.test(id)) {
+    return res.status(400).json({ error: "Invalid course ID." });
+  }
+
+  try {
+    const enrollment = await Enrollment.findOne({ course: id, student: req.auth._id })
+      .select("_id")
+      .lean()
+      .exec();
+
+    return res.json({ enrollmentId: enrollment ? String(enrollment._id) : null });
+  } catch {
+    return res.status(500).json({ error: "Unable to check enrollment." });
+  }
+};
+
+export default { findEnrollment, create, enrollmentByID, isStudent, read, listEnrolled, complete, enrollmentStats, enrollmentStatsByInstructor, enrollmentForCourse };

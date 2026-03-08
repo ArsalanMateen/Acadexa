@@ -5,6 +5,8 @@ import enrollmentCtrl from "./enrollment.controller.js";
 
 const router = express.Router();
 
+router.get("/api/enrollment/for-course/:targetCourseId", authCtrl.requireSignin, enrollmentCtrl.enrollmentForCourse);
+router.get("/api/enrollment/stats/by-instructor", authCtrl.requireSignin, enrollmentCtrl.enrollmentStatsByInstructor);
 router.get("/api/enrollment/enrolled", authCtrl.requireSignin, enrollmentCtrl.listEnrolled);
 router.post("/api/enrollment/new/:courseId", authCtrl.requireSignin, enrollmentCtrl.findEnrollment, enrollmentCtrl.create);
 router.get("/api/enrollment/:enrollmentId", authCtrl.requireSignin, enrollmentCtrl.isStudent, enrollmentCtrl.read);
