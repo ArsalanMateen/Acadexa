@@ -4,6 +4,8 @@ import formidable from "formidable";
 import { publishedQuery, encodeCourseCursor, publishedCourseCard } from "./coursePagination.js";
 import r2Helper from "../../integrations/r2.js";
 import fs from "fs/promises";
+import Enrollment from "../enrollments/enrollment.model.js";
+import mongoose from "mongoose";
 
 const parseCourseForm = (req, res, edit = false) => {
   const form = new formidable.IncomingForm();
@@ -260,4 +262,31 @@ const defaultPhoto = (req, res) => {
   return res.send(svg);
 };
 
-export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson, photo, defaultPhoto };
+const remove = async (req, res) => {
+  let session;
+
+  try {
+    const course = req.course;
+
+    session = await mongoose.startSession();
+
+    let deleteCourse;
+
+    await session.withTransaction(async () => {
+      deleteCourse = await Course.findByIdAndDelete(course._id, { session });
+      await Enrollment.deleteMany({ course: course._id }, { session });
+    });
+
+    if (course.image) await r2Helper.deleteCourseImage(course.image);
+
+    res.json(deleteCourse);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  } finally {
+    if (session) await session.endSession();
+  }
+};
+
+export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson, photo, defaultPhoto, remove };
