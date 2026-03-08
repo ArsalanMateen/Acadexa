@@ -22,4 +22,13 @@ const complete = (params, credentials, enrollmentData) =>
     body: JSON.stringify(enrollmentData),
   });
 
-export { create, read, listEnrolled, complete };
+const enrollmentStats = (params, credentials, signal) =>
+  request(`/api/enrollment/stats/${params.courseId}`, {
+    headers: authorization(credentials),
+    signal,
+  });
+
+const enrollmentStatsByInstructor = (credentials, signal) =>
+  request("/api/enrollment/stats/by-instructor", { headers: authorization(credentials), signal });
+
+export { create, read, listEnrolled, complete, enrollmentStats, enrollmentStatsByInstructor };
