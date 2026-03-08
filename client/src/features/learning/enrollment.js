@@ -31,4 +31,10 @@ const enrollmentStats = (params, credentials, signal) =>
 const enrollmentStatsByInstructor = (credentials, signal) =>
   request("/api/enrollment/stats/by-instructor", { headers: authorization(credentials), signal });
 
-export { create, read, listEnrolled, complete, enrollmentStats, enrollmentStatsByInstructor };
+const enrollmentForCourse = (params, credentials, signal) =>
+  request(`/api/enrollment/for-course/${encodeURIComponent(params.courseId)}`, {
+    headers: authorization(credentials),
+    signal,
+  });
+
+export { create, read, listEnrolled, complete, enrollmentStats, enrollmentStatsByInstructor, enrollmentForCourse };
