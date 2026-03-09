@@ -17,4 +17,7 @@ const update = (params, credentials, user) =>
     body: JSON.stringify(user),
   });
 
-export { create, read, update };
+const remove = (params, credentials) =>
+  request(`/api/users/${params.userId}`, { method: "DELETE", headers: authorization(credentials) });
+
+export { create, read, update, remove };
