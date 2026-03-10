@@ -7,3 +7,26 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.card {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+}
+
+.image {
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 0;
+}
+
+.body {
+  padding: 24px;
+}
+
