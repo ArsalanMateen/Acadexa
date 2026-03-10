@@ -1,5 +1,9 @@
 import User from "./user.model.js";
 import errorHandler from "../../lib/dbErrorHandler.js";
+import Course from "../courses/course.model.js";
+import Enrollment from "../enrollments/enrollment.model.js";
+import r2Helper from "../../integrations/r2.js";
+import mongoose from "mongoose";
 
 const create = async (req, res) => {
   const { name, email, password } = req.body;
@@ -96,4 +100,43 @@ const isInstructor = (req, res, next) => {
   next();
 };
 
-export default { create, userByID, read, update, list, isInstructor };
+const remove = async (req, res) => {
+  let session;
+
+  try {
+    const user = req.profile;
+
+    session = await mongoose.startSession();
+
+    let courses;
+    let deletedUser;
+
+    await session.withTransaction(async () => {
+      courses = await Course.find({ instructor: user._id }).session(session);
+
+      const courseIds = courses.map((course) => course._id);
+
+      await Enrollment.deleteMany(
+        { $or: [{ student: user._id }, { course: { $in: courseIds } }] },
+        { session },
+      );
+      await Course.deleteMany({ instructor: user._id }, { session });
+      deletedUser = await User.findByIdAndDelete(user._id, { session });
+    });
+    await Promise.all(courses.map((course) => r2Helper.deleteCourseImage(course.image)));
+
+    if (!deletedUser) return res.status(404).json({ error: "User not found" });
+
+    deletedUser.hashed_password = undefined;
+    deletedUser.salt = undefined;
+    res.json(deletedUser);
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  } finally {
+    if (session) await session.endSession();
+  }
+};
+
+export default { create, userByID, read, update, list, isInstructor, remove };

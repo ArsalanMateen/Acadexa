@@ -13,6 +13,7 @@ router.get("/api/courses/:courseId", authCtrl.optionalSignin, courseCtrl.read);
 router.put("/api/courses/:courseId", authCtrl.requireSignin, courseCtrl.isInstructor, courseCtrl.update);
 router.put("/api/courses/:courseId/lesson/new", authCtrl.requireSignin, courseCtrl.isInstructor, courseCtrl.newLesson);
 router.get("/api/courses/photo/:courseId", courseCtrl.photo, courseCtrl.defaultPhoto);
+router.delete("/api/courses/:courseId", authCtrl.requireSignin, courseCtrl.isInstructor, courseCtrl.remove);
 router.param("userId", userCtrl.userByID);
 router.param("courseId", courseCtrl.courseByID);
 

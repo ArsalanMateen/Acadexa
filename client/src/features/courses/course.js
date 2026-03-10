@@ -33,4 +33,10 @@ const update = (params, credentials, course) =>
     body: course,
   });
 
-export { listPublished, read, listByInstructor, create, update };
+const remove = (params, credentials) =>
+  request(`/api/courses/${params.courseId}`, {
+    method: "DELETE",
+    headers: authorization(credentials),
+  });
+
+export { listPublished, read, listByInstructor, create, update, remove };

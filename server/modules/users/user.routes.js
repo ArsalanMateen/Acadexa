@@ -8,6 +8,7 @@ router.post("/api/users", userCtrl.create);
 router.get("/api/users/:userId", authCtrl.requireSignin, userCtrl.read);
 router.put("/api/users/:userId", authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.update);
 router.get("/api/users", authCtrl.requireSignin, userCtrl.list);
+router.delete("/api/users/:userId", authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.remove);
 router.param("userId", userCtrl.userByID);
 
 export default router;
