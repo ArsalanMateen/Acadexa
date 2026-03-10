@@ -26,7 +26,52 @@
   border-radius: 0;
 }
 
+.body,
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .body {
   padding: 24px;
+}
+
+.page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.page > .block {
+  margin-bottom: 24px;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+
+.classroom {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 32px;
+}
+
+.panel {
+  padding: 24px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.compact {
+  max-width: 700px;
+}
+
+.compact .detail {
+  grid-template-columns: 1fr;
 }
 
