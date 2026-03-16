@@ -1,0 +1,19 @@
+.page {
+  min-height: calc(100vh - 72px);
+  background: #ffffff;
+  padding: 2rem 0 4rem;
+}
+
+.paragraph {
+  margin: 0 0 1rem;
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.emptyContent {
+  color: #64748b;
+  margin: 0;
+}
+

@@ -1,41 +1,171 @@
+import CourseImage from "../../../shared/components/CourseImage";
+import useRecordScope from "../../../shared/hooks/useRecordScope";
+import { getEmbedUrl, isDirectVideo, safeHttpUrl } from "../../../shared/utils/resources";
+import { PageSkeleton, PageState } from "../../../shared/components/ui";
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../../../shared/session/auth-helper";
-import { safeHttpUrl, getEmbedUrl, isDirectVideo } from "../../../shared/utils/resources";
 import { read, complete } from "../enrollment";
+import styles from "./Enrollment.module.css";
+
+function renderFormattedContent(text) {
+  if (!text) {
+    return <p className={styles.emptyContent}>No content available for this lesson.</p>;
+  }
+
+  return text.split(/\n\s*\n/).map((paragraph, index) => (
+    <p key={index} className={styles.paragraph} style={{ whiteSpace: "pre-wrap" }}>
+      {paragraph}
+    </p>
+  ));
+}
+
+function getResourceTitle(url, lessonTitle) {
+  if (!url) return "External Resource";
+
+  try {
+    const parsed = new URL(url);
+    const domain = parsed.hostname.replace("www.", "");
+
+    return `${lessonTitle || "Lesson"} Overview (${domain})`;
+  } catch {
+    return "External Resource Link";
+  }
+}
+
 export default function Enrollment() {
   const { enrollmentId } = useParams();
-  const auth = useAuth();
-  const [enrollment, setEnrollment] = useState(null);
+  const authData = useAuth();
+
+  const [enrollment, setEnrollment] = useState({
+    course: { lessons: [] },
+    lessonStatus: [],
+  });
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const identity = `${enrollmentId}:${authData?.token}`;
+  const capture = useRecordScope(identity);
+  const [loadedIdentity, setLoadedIdentity] = useState(null);
   const [error, setError] = useState("");
-  useEffect(() => {
-    const controller = new AbortController();
-    read({ enrollmentId }, { t: auth.token }, controller.signal).then(data => {
-      if (controller.signal.aborted) return;
-      if (data?.error) setError(data.error); else {
-        setEnrollment(data);
-        const first = (data.course?.lessons || []).findIndex(lesson => !data.lessonStatus?.find(status => String(status.lesson) === String(lesson._id))?.complete);
-        setActiveLessonIndex(first >= 0 ? first : Math.max(0, (data.course?.lessons.length || 1) - 1));
-      }
-    });
-    return () => controller.abort();
-  }, [enrollmentId, auth]);
   const [saving, setSaving] = useState(false);
-  const markComplete = async () => {
-    if (saving) return;
-    const status = enrollment.lessonStatus.find(item => String(item.lesson) === String(enrollment.course.lessons[activeLessonIndex]._id));
-    if (!status) return;
-    setSaving(true);
-    const data = await complete({ enrollmentId }, { t: auth.token }, { lessonStatusId: status._id, complete: !status.complete });
-    if (data?.error) setError(data.error); else setEnrollment(data);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    const isCurrent = capture();
+
+    // oxlint-disable-next-line react/set-state-in-effect -- Reset stale content when starting a new asynchronous request.
+    setLoading(true);
+    setLoadError("");
+    setLoadedIdentity(identity);
+    setActiveLessonIndex(0);
+    setError("");
     setSaving(false);
+
+    read({ enrollmentId }, { t: authData.token }, abortController.signal).then((data) => {
+      if (abortController.signal.aborted || !isCurrent()) return;
+      if (data && !data.error) {
+        setEnrollment(data);
+
+        const firstIncomplete = (data.course?.lessons || []).findIndex(
+          (lesson) =>
+            !data.lessonStatus?.find((status) => String(status.lesson) === String(lesson._id))
+              ?.complete,
+        );
+
+        if (firstIncomplete !== -1) {
+          setActiveLessonIndex(firstIncomplete);
+        } else {
+          const totalLessons = data.course?.lessons?.length || data.lessonStatus?.length || 0;
+
+          setActiveLessonIndex(Math.max(0, totalLessons - 1));
+        }
+      }
+      if (!data || data.error) setLoadError(data?.error || "Unable to load this page.");
+
+      setLoading(false);
+    });
+
+    return () => abortController.abort();
+  }, [enrollmentId, authData, identity, capture]);
+
+  if (loading || loadedIdentity !== identity) {
+    return <PageSkeleton variant="classroom" label="Loading classroom" />;
+  }
+  if (loadError) return <PageState error message={loadError} />;
+
+  const course = enrollment.course || { lessons: [] };
+  const lessons = course.lessons || [];
+  const lessonStatuses = enrollment.lessonStatus || [];
+
+  const currentLesson = lessons[activeLessonIndex] || {};
+  const currentStatus =
+    lessonStatuses.find((status) => String(status.lesson) === String(currentLesson._id)) || {};
+
+  const completedCount = lessons.filter(
+    (lesson) =>
+      lessonStatuses.find((status) => String(status.lesson) === String(lesson._id))?.complete,
+  ).length;
+  const progressPercentage =
+    lessons.length > 0 ? Math.min(100, Math.round((completedCount / lessons.length) * 100)) : 0;
+
+  const handleToggleComplete = async () => {
+    if (saving || !currentStatus._id) return false;
+
+    setSaving(true);
+    setError("");
+
+    const isCurrent = capture();
+
+    const data = await complete(
+      { enrollmentId },
+      { t: authData.token },
+      { lessonStatusId: currentStatus._id, complete: !currentStatus.complete },
+    );
+
+    if (!isCurrent()) return false;
+
+    setSaving(false);
+
+    if (data?.error) {
+      setError(data.error);
+      return false;
+    }
+
+    setEnrollment(data);
+    return true;
   };
-  if (error) return <p role="alert">{error}</p>;
-  if (!enrollment) return <p role="status">Loading classroom</p>;
-  if (!enrollment.course) return <p>This course is no longer available.</p>;
-  const lessons = enrollment.course.lessons || [];
-  if (!lessons.length) return <p>Your instructor hasn't added lessons yet.</p>;
-  const currentLesson = lessons[activeLessonIndex] || lessons[0];
-  return <main><h1>{enrollment.course.name}</h1><nav aria-label="Lessons">{lessons.map((lesson, index) => <button key={lesson._id} onClick={() => setActiveLessonIndex(index)}>{lesson.title}</button>)}</nav><h2>{currentLesson.title}</h2>{getEmbedUrl(currentLesson.resource_url) ? <iframe src={getEmbedUrl(currentLesson.resource_url)} title={currentLesson.title} allowFullScreen /> : isDirectVideo(currentLesson.resource_url) ? <video controls src={safeHttpUrl(currentLesson.resource_url)} /> : null}<p style={{ whiteSpace: "pre-wrap" }}>{currentLesson.content}</p>{safeHttpUrl(currentLesson.resource_url) && <a href={safeHttpUrl(currentLesson.resource_url)} target="_blank" rel="noopener noreferrer">Lesson resource</a>}<button disabled={saving} onClick={markComplete}>Toggle completion</button></main>;
+
+  const handlePrevLesson = () => {
+    if (activeLessonIndex > 0) {
+      setActiveLessonIndex((prev) => prev - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleNextLesson = async () => {
+    const isCurrent = capture();
+
+    if (!currentStatus.complete) {
+      if (!(await handleToggleComplete())) return;
+    }
+    if (!isCurrent()) return;
+    if (activeLessonIndex < lessons.length - 1) {
+      setActiveLessonIndex((prev) => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  if (!enrollment.course) {
+    return <PageState message="This course is no longer available." />;
+  }
+  if (!lessons.length) {
+    return <PageState message="Your instructor hasn't added lessons to this course yet." />;
+  }
+
+  const resourceUrl = safeHttpUrl(currentLesson.resource_url);
+  const embedUrl = getEmbedUrl(resourceUrl);
+  const isDirectVideoResource = isDirectVideo(resourceUrl);
+
+  return (<main className={styles.page}><h1>{course.name}</h1><nav aria-label="Lessons">{lessons.map((lesson, idx) => <button key={lesson._id} disabled={saving} onClick={() => setActiveLessonIndex(idx)}>{lesson.title}</button>)}</nav><h2>{currentLesson.title}</h2>{embedUrl ? <iframe src={embedUrl} title={currentLesson.title} allowFullScreen /> : isDirectVideoResource ? <video src={resourceUrl} controls /> : null}{renderFormattedContent(currentLesson.content)}{resourceUrl && <a href={resourceUrl} target="_blank" rel="noopener noreferrer">{getResourceTitle(resourceUrl, currentLesson.title)}</a>}<p>{completedCount} of {lessons.length} completed ({progressPercentage}%)</p>{error && <p role="alert">{error}</p>}<button onClick={handlePrevLesson} disabled={saving || activeLessonIndex === 0}>Previous</button><button onClick={handleToggleComplete} disabled={saving || !currentStatus._id}>{currentStatus.complete ? "Completed" : "Mark completed"}</button><button onClick={handleNextLesson} disabled={saving || activeLessonIndex >= lessons.length - 1}>Next</button></main>);
 }
