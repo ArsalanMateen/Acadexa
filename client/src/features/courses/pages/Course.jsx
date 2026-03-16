@@ -5,7 +5,10 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../shared/session/auth-helper";
 import { read, update } from "../course";
-import { create as createEnrollment, enrollmentForCourse } from "../../learning/enrollment";
+import {
+  create as createEnrollment,
+  enrollmentForCourse,
+} from "../../learning/enrollment";
 import selfPacedLearningImg from "../../../assets/self-paced-learning.png";
 import { enrollmentLookup } from "../enrollmentState";
 import styles from "./Course.module.css";
@@ -33,7 +36,11 @@ export default function Course() {
   const membership =
     membershipState.identity === identity
       ? membershipState
-      : { status: authData ? "checking" : "notEnrolled", enrollmentId: null, error: "" };
+      : {
+          status: authData ? "checking" : "notEnrolled",
+          enrollmentId: null,
+          error: "",
+        };
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -51,9 +58,13 @@ export default function Course() {
     setError("");
     read({ courseId }, signal, { t: authData?.token }).then((data) => {
       if (signal.aborted || !isCurrent()) return;
-      if (data?.error || !data?._id) {
-        setLoadError(data?.error || "Course not found.");
-      } else setCourse(data);
+      if (data.error) {
+        setLoadError(data.error);
+      } else if (!data._id) {
+        setLoadError("Course not found.");
+      } else {
+        setCourse(data);
+      }
 
       setLoading(false);
     });
@@ -74,8 +85,12 @@ export default function Course() {
     });
 
     if (authData) {
-      enrollmentForCourse({ courseId }, { t: authData.token }, controller.signal).then((data) => {
-        if (controller.signal.aborted || data?.aborted || !isCurrent()) return;
+      enrollmentForCourse(
+        { courseId },
+        { t: authData.token },
+        controller.signal,
+      ).then((data) => {
+        if (controller.signal.aborted || data.aborted || !isCurrent()) return;
 
         setMembership({ ...enrollmentLookup(data), identity });
       });
@@ -86,7 +101,9 @@ export default function Course() {
 
   const handleEnroll = async () => {
     if (!authData) {
-      navigate("/signin", { state: { from: { pathname: `/course/${courseId}` } } });
+      navigate("/signin", {
+        state: { from: { pathname: `/course/${courseId}` } },
+      });
       return;
     }
 
@@ -100,10 +117,10 @@ export default function Course() {
     const result = await createEnrollment({ courseId }, { t: authData.token });
 
     if (!isCurrent()) return;
-    if (result && !result.error) {
+    if (!result.error) {
       navigate(`/learn/${result._id}`);
     } else {
-      setError(result?.error || "Failed to enroll. Please try again.");
+      setError(result.error);
       setEnrolling(false);
     }
   };
@@ -122,10 +139,10 @@ export default function Course() {
     const data = await update({ courseId }, { t: authData.token }, courseData);
 
     if (!isCurrent()) return;
-    if (data && !data.error) {
+    if (!data.error) {
       setCourse(data);
     } else {
-      setError(data?.error || "Failed to update course status.");
+      setError(data.error);
     }
 
     setPublishing(false);
@@ -134,11 +151,254 @@ export default function Course() {
   if (loading || loadedIdentity !== identity) {
     return <PageSkeleton variant="detail" label="Loading course" />;
   }
-  if (loadError) return <PageState error message={loadError} />;
+  if (loadError)
+    return <PageState error title="Course not found" message={loadError} />;
 
   const isInstructor =
-    authData && authData.user._id === (course.instructor?._id || course.instructor);
-  const lessons = course.lessons || [];
+    authData &&
+    authData.user._id === course.instructor._id;
+  const lessons = course.lessons;
 
-  return (<main className={styles.page}><h1>{course.name}</h1><p>{course.description}</p><ol>{lessons.map(lesson => <li key={lesson._id}>{lesson.title}</li>)}</ol>{error && <p role="alert">{error}</p>}{isInstructor ? <><Link to={`/teach/course/edit/${course._id}`}>Edit course</Link><button onClick={handlePublishToggle} disabled={publishing}>{course.published ? "Unpublish" : "Publish"}</button></> : membership.status === "enrolled" ? <Link to={`/learn/${membership.enrollmentId}`}>Go to classroom</Link> : membership.status === "error" ? <p role="alert">{membership.error}</p> : membership.status === "checking" ? <p role="status">Checking enrollment</p> : course.published ? <button onClick={handleEnroll} disabled={enrolling}>Enroll now</button> : <p>Course is in draft mode</p>}</main>);
+  return (
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <section className={styles.header}>
+          <div className={styles.coverWrap}>
+            <CourseImage
+              loading="eager"
+              key={course._id}
+              src={course.image}
+              alt={course.name}
+              className={styles.coverImage}
+            />
+          </div>
+
+          <div className={styles.headerInfo}>
+            <div className={styles.category}>
+              {course.category}
+            </div>
+            <h1 className={styles.title}>{course.name}</h1>
+            <div className={styles.instructor}>
+              By {course.instructor.name}
+            </div>
+            <p className={styles.description}>{course.description}</p>
+            <div className={styles.lessonsBadge}>
+              <svg
+                className={styles.metaIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+              <span>
+                {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.grid}>
+          <main className={styles.main}>
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Course lessons</h2>
+
+              {lessons.length === 0 ? (
+                <PageState
+                  compact
+                  icon="curriculum"
+                  title="Curriculum in preparation"
+                  message="The instructor hasn't added lessons to this course curriculum yet."
+                />
+              ) : (
+                <div className={styles.lessons}>
+                  {lessons.map((lesson, idx) => (
+                    <div key={lesson._id} className={styles.lesson}>
+                      <div className={styles.lessonLeft}>
+                        <span className={styles.lessonNumber}>{idx + 1}.</span>
+                        <span className={styles.lessonTitle}>
+                          {lesson.title}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </main>
+
+          <aside className={styles.sidebar}>
+            <div className={styles.sideCard}>
+              <div className={styles.actionBox}>
+                {error && <p role="alert">{error}</p>}
+                {isInstructor ? (
+                  <div className={styles.buttonGroup}>
+                    <Link
+                      to={`/teach/course/edit/${course._id}`}
+                      className={styles.primaryButton}
+                    >
+                      Edit Course
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handlePublishToggle}
+                      disabled={publishing}
+                      className={
+                        course.published
+                          ? styles.mutedButton
+                          : styles.outlineButton
+                      }
+                    >
+                      {course.published ? "Unpublish Course" : "Publish Course"}
+                    </button>
+                  </div>
+                ) : membership.status === "checking" ? (
+                  <p role="status">Checking enrollment…</p>
+                ) : membership.status === "error" ? (
+                  <p role="alert">{membership.error}</p>
+                ) : membership.status === "enrolled" ? (
+                  <Link
+                    to={`/learn/${membership.enrollmentId}`}
+                    className={styles.primaryButton}
+                  >
+                    Go to Classroom
+                  </Link>
+                ) : course.published ? (
+                  <button
+                    type="button"
+                    onClick={handleEnroll}
+                    className={styles.primaryButton}
+                    disabled={enrolling}
+                  >
+                    {enrolling ? "Enrolling..." : "Enroll now"}
+                  </button>
+                ) : (
+                  <div className={styles.draftAlert}>
+                    Course is currently in draft mode
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.metaList}>
+                <div className={styles.metaItem}>
+                  <div className={styles.metaIconWrap}>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className={styles.metaLabel}>Category</div>
+                    <div className={styles.metaValue}>
+                      {course.category}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.metaItem}>
+                  <div className={styles.metaIconWrap}>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className={styles.metaLabel}>Instructor</div>
+                    <div className={styles.metaValue}>
+                      {course.instructor.name}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.metaItem}>
+                  <div className={styles.metaIconWrap}>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className={styles.metaLabel}>Lessons</div>
+                    <div className={styles.metaValue}>
+                      {lessons.length}{" "}
+                      {lessons.length === 1 ? "lesson" : "lessons"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.metaItem}>
+                  <div className={styles.metaIconWrap}>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className={styles.metaLabel}>Status</div>
+                    <div className={styles.metaValue}>
+                      {course.published ? "Published" : "Draft"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.paceCard}>
+              <img
+                src={selfPacedLearningImg}
+                alt="Learn at your own pace"
+                width="200"
+                height="150"
+                className={styles.paceImage}
+              />
+              <h3 className={styles.paceTitle}>Learn at your own pace</h3>
+              <p className={styles.paceText}>
+                Follow the lessons, explore the resources, and build real
+                projects.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
 }
