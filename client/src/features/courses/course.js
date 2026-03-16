@@ -39,4 +39,11 @@ const remove = (params, credentials) =>
     headers: authorization(credentials),
   });
 
-export { listPublished, read, listByInstructor, create, update, remove };
+const newLesson = (params, credentials, lesson) =>
+  request(`/api/courses/${params.courseId}/lesson/new`, {
+    method: "PUT",
+    headers: { ...authorization(credentials), "Content-Type": "application/json" },
+    body: JSON.stringify({ lesson }),
+  });
+
+export { listPublished, read, listByInstructor, create, update, remove, newLesson };
