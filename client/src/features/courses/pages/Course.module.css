@@ -304,3 +304,32 @@
   font-weight: 600;
 }
 
+.paceCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.paceImage {
+  margin: 0 auto 0.75rem;
+  display: block;
+  object-fit: contain;
+}
+
+.paceTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.paceText {
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0;
+}
+

@@ -5,7 +5,10 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../shared/session/auth-helper";
 import { read, update } from "../course";
-import { create as createEnrollment, enrollmentForCourse } from "../../learning/enrollment";
+import {
+  create as createEnrollment,
+  enrollmentForCourse,
+} from "../../learning/enrollment";
 import selfPacedLearningImg from "../../../assets/self-paced-learning.png";
 import { enrollmentLookup } from "../enrollmentState";
 import styles from "./Course.module.css";
@@ -33,7 +36,11 @@ export default function Course() {
   const membership =
     membershipState.identity === identity
       ? membershipState
-      : { status: authData ? "checking" : "notEnrolled", enrollmentId: null, error: "" };
+      : {
+          status: authData ? "checking" : "notEnrolled",
+          enrollmentId: null,
+          error: "",
+        };
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -51,9 +58,13 @@ export default function Course() {
     setError("");
     read({ courseId }, signal, { t: authData?.token }).then((data) => {
       if (signal.aborted || !isCurrent()) return;
-      if (data?.error || !data?._id) {
-        setLoadError(data?.error || "Course not found.");
-      } else setCourse(data);
+      if (data.error) {
+        setLoadError(data.error);
+      } else if (!data._id) {
+        setLoadError("Course not found.");
+      } else {
+        setCourse(data);
+      }
 
       setLoading(false);
     });
@@ -74,8 +85,12 @@ export default function Course() {
     });
 
     if (authData) {
-      enrollmentForCourse({ courseId }, { t: authData.token }, controller.signal).then((data) => {
-        if (controller.signal.aborted || data?.aborted || !isCurrent()) return;
+      enrollmentForCourse(
+        { courseId },
+        { t: authData.token },
+        controller.signal,
+      ).then((data) => {
+        if (controller.signal.aborted || data.aborted || !isCurrent()) return;
 
         setMembership({ ...enrollmentLookup(data), identity });
       });
@@ -86,7 +101,9 @@ export default function Course() {
 
   const handleEnroll = async () => {
     if (!authData) {
-      navigate("/signin", { state: { from: { pathname: `/course/${courseId}` } } });
+      navigate("/signin", {
+        state: { from: { pathname: `/course/${courseId}` } },
+      });
       return;
     }
 
@@ -100,10 +117,10 @@ export default function Course() {
     const result = await createEnrollment({ courseId }, { t: authData.token });
 
     if (!isCurrent()) return;
-    if (result && !result.error) {
+    if (!result.error) {
       navigate(`/learn/${result._id}`);
     } else {
-      setError(result?.error || "Failed to enroll. Please try again.");
+      setError(result.error);
       setEnrolling(false);
     }
   };
@@ -122,10 +139,10 @@ export default function Course() {
     const data = await update({ courseId }, { t: authData.token }, courseData);
 
     if (!isCurrent()) return;
-    if (data && !data.error) {
+    if (!data.error) {
       setCourse(data);
     } else {
-      setError(data?.error || "Failed to update course status.");
+      setError(data.error);
     }
 
     setPublishing(false);
@@ -134,11 +151,13 @@ export default function Course() {
   if (loading || loadedIdentity !== identity) {
     return <PageSkeleton variant="detail" label="Loading course" />;
   }
-  if (loadError) return <PageState error message={loadError} />;
+  if (loadError)
+    return <PageState error title="Course not found" message={loadError} />;
 
   const isInstructor =
-    authData && authData.user._id === (course.instructor?._id || course.instructor);
-  const lessons = course.lessons || [];
+    authData &&
+    authData.user._id === course.instructor._id;
+  const lessons = course.lessons;
 
   return (
     <div className={styles.page}>
@@ -148,16 +167,20 @@ export default function Course() {
             <CourseImage
               loading="eager"
               key={course._id}
-              src={course.image || "/course-image-fallback.svg"}
+              src={course.image}
               alt={course.name}
               className={styles.coverImage}
             />
           </div>
 
           <div className={styles.headerInfo}>
-            <div className={styles.category}>{course.category || "General"}</div>
+            <div className={styles.category}>
+              {course.category}
+            </div>
             <h1 className={styles.title}>{course.name}</h1>
-            <div className={styles.instructor}>By {course.instructor?.name || "Instructor"}</div>
+            <div className={styles.instructor}>
+              By {course.instructor.name}
+            </div>
             <p className={styles.description}>{course.description}</p>
             <div className={styles.lessonsBadge}>
               <svg
@@ -188,16 +211,21 @@ export default function Course() {
               <h2 className={styles.cardTitle}>Course lessons</h2>
 
               {lessons.length === 0 ? (
-                <p className={styles.emptyText}>
-                  No lessons have been added to this curriculum yet.
-                </p>
+                <PageState
+                  compact
+                  icon="curriculum"
+                  title="Curriculum in preparation"
+                  message="The instructor hasn't added lessons to this course curriculum yet."
+                />
               ) : (
                 <div className={styles.lessons}>
                   {lessons.map((lesson, idx) => (
-                    <div key={lesson._id || idx} className={styles.lesson}>
+                    <div key={lesson._id} className={styles.lesson}>
                       <div className={styles.lessonLeft}>
                         <span className={styles.lessonNumber}>{idx + 1}.</span>
-                        <span className={styles.lessonTitle}>{lesson.title}</span>
+                        <span className={styles.lessonTitle}>
+                          {lesson.title}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -212,24 +240,34 @@ export default function Course() {
                 {error && <p role="alert">{error}</p>}
                 {isInstructor ? (
                   <div className={styles.buttonGroup}>
-                    <Link to={`/teach/course/edit/${course._id}`} className={styles.primaryButton}>
+                    <Link
+                      to={`/teach/course/edit/${course._id}`}
+                      className={styles.primaryButton}
+                    >
                       Edit Course
                     </Link>
                     <button
                       type="button"
                       onClick={handlePublishToggle}
                       disabled={publishing}
-                      className={course.published ? styles.mutedButton : styles.outlineButton}
+                      className={
+                        course.published
+                          ? styles.mutedButton
+                          : styles.outlineButton
+                      }
                     >
                       {course.published ? "Unpublish Course" : "Publish Course"}
                     </button>
                   </div>
-                ) : authData && membership.status === "checking" ? (
+                ) : membership.status === "checking" ? (
                   <p role="status">Checking enrollment…</p>
-                ) : authData && membership.status === "error" ? (
+                ) : membership.status === "error" ? (
                   <p role="alert">{membership.error}</p>
                 ) : membership.status === "enrolled" ? (
-                  <Link to={`/learn/${membership.enrollmentId}`} className={styles.primaryButton}>
+                  <Link
+                    to={`/learn/${membership.enrollmentId}`}
+                    className={styles.primaryButton}
+                  >
                     Go to Classroom
                   </Link>
                 ) : course.published ? (
@@ -242,7 +280,9 @@ export default function Course() {
                     {enrolling ? "Enrolling..." : "Enroll now"}
                   </button>
                 ) : (
-                  <div className={styles.draftAlert}>Course is currently in draft mode</div>
+                  <div className={styles.draftAlert}>
+                    Course is currently in draft mode
+                  </div>
                 )}
               </div>
 
@@ -262,7 +302,9 @@ export default function Course() {
                   </div>
                   <div>
                     <div className={styles.metaLabel}>Category</div>
-                    <div className={styles.metaValue}>{course.category || "General"}</div>
+                    <div className={styles.metaValue}>
+                      {course.category}
+                    </div>
                   </div>
                 </div>
 
@@ -283,7 +325,7 @@ export default function Course() {
                   <div>
                     <div className={styles.metaLabel}>Instructor</div>
                     <div className={styles.metaValue}>
-                      {course.instructor?.name || "Instructor"}
+                      {course.instructor.name}
                     </div>
                   </div>
                 </div>
@@ -308,7 +350,8 @@ export default function Course() {
                   <div>
                     <div className={styles.metaLabel}>Lessons</div>
                     <div className={styles.metaValue}>
-                      {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
+                      {lessons.length}{" "}
+                      {lessons.length === 1 ? "lesson" : "lessons"}
                     </div>
                   </div>
                 </div>
@@ -339,6 +382,20 @@ export default function Course() {
               </div>
             </div>
 
+            <div className={styles.paceCard}>
+              <img
+                src={selfPacedLearningImg}
+                alt="Learn at your own pace"
+                width="200"
+                height="150"
+                className={styles.paceImage}
+              />
+              <h3 className={styles.paceTitle}>Learn at your own pace</h3>
+              <p className={styles.paceText}>
+                Follow the lessons, explore the resources, and build real
+                projects.
+              </p>
+            </div>
           </aside>
         </div>
       </div>
