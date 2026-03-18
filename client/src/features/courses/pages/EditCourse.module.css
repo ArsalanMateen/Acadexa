@@ -4,3 +4,397 @@
   padding: 2rem 0 4rem;
 }
 
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.main {
+  width: 100%;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #475569;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1.25rem;
+  transition: color 0.15s ease;
+}
+
+.back:hover {
+  color: #0f172a;
+}
+
+.backIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.4rem;
+}
+
+.subtitle {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.error {
+  color: #b91c1c;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.cardTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #ffffff;
+  box-sizing: border-box;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.selectWrap {
+  position: relative;
+  width: 100%;
+}
+
+.select {
+  width: 100%;
+  appearance: none;
+  padding: 0.7rem 2.25rem 0.7rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #ffffff;
+  box-sizing: border-box;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.selectChevron {
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.toggleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switchSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.2s;
+  border-radius: 24px;
+}
+
+.switchSlider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+.switch input:checked + .switchSlider {
+  background-color: var(--color-primary);
+}
+
+.switch input:checked + .switchSlider:before {
+  transform: translateX(20px);
+}
+
+.toggleLabel {
+  font-size: 0.9rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.lessonsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.addLessonButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background-color: var(--color-primary);
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.addLessonButton:hover {
+  background-color: var(--color-primary-hover);
+  color: #ffffff;
+}
+
+.plusIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.lessonsEmpty {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lesson {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  background: #fafbfc;
+  transition: background 0.15s ease;
+}
+
+.lesson:hover {
+  background: #f1f5f9;
+}
+
+.lessonLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.dragIcon {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.lessonNumber {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.lessonName {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lessonActions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.editLessonButton,
+.deleteLessonButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.editLessonButton {
+  color: #64748b;
+}
+
+.editLessonButton:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.deleteLessonButton {
+  color: #ef4444;
+}
+
+.deleteLessonButton:hover {
+  background: #fee2e2;
+}
+
+.editLessonButton svg,
+.deleteLessonButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.bottomBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dangerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dangerButton:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}
+
+.actionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cancelButton {
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cancelButton:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.switch:has(input:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 24px;
+}
+

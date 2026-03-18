@@ -279,5 +279,268 @@ export default function EditCourse() {
 
   const lessons = course.lessons || [];
 
-  return (<main className={styles.page}><h1>Edit course</h1>{error && <p role="alert">{error}</p>}<CourseImageUpload inputId="course-image-upload" inputRef={imageInput} src={imagePreview || course.image} onChange={handleImageChange} disabled={saving} />{["name", "description", "category"].map(field => <label key={field}>{field}<input value={course[field]} onChange={handleFieldChange(field)} /></label>)}<label><input type="checkbox" checked={course.published} onChange={handleTogglePublished} />Published</label><button onClick={handleSaveCourse} disabled={saving}>Save</button><button onClick={handleDeleteCourse} disabled={saving}>Delete course</button><ol>{lessons.map((lesson, idx) => <li key={lesson._id}>{lesson.title}<button onClick={() => handleOpenEditLesson(idx)}>Edit</button><button onClick={() => handleDeleteLesson(idx)}>Delete</button></li>)}</ol><button onClick={handleOpenAddLesson}>Add lesson</button>{mode !== "overview" && <form onSubmit={handleSaveLesson}>{["title", "content", "resource_url"].map(field => <label key={field}>{field}<input value={lessonForm[field]} onChange={event => setLessonForm({ ...lessonForm, [field]: event.target.value })} /></label>)}<button disabled={saving}>{mode === "edit-lesson" ? "Update" : "Add lesson"}</button></form>}</main>);
+  return (
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <main className={styles.main}>
+          {error && mode !== "overview" && <p role="alert">{error}</p>}
+          {mode === "overview" && (
+            <div>
+              <Link to="/teach/courses" className={styles.back}>
+                <svg
+                  className={styles.backIcon}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12 19 5 12 12 5" />
+                </svg>
+                <span>Back to my courses</span>
+              </Link>
+
+              <header className={styles.header}>
+                <h1 className={styles.title}>Edit Course</h1>
+                <p className={styles.subtitle}>
+                  Update your course details, manage lessons, and keep your content up to date.
+                </p>
+              </header>
+
+              {error && (
+                <div role="alert" className={styles.error}>
+                  {error}
+                </div>
+              )}
+
+              <div className={styles.grid}>
+                <div className={styles.card}>
+                  <h2 className={styles.cardTitle}>Course Information</h2>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Course image</label>
+                    <CourseImageUpload
+                      key={courseId}
+                      inputId="edit-course-image"
+                      inputRef={imageInput}
+                      src={imagePreview || course.image}
+                      alt={course.name || "Course cover preview"}
+                      fileName={image?.name}
+                      onChange={handleImageChange}
+                      disabled={saving}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label htmlFor="editcourse-field-1" className={styles.label}>
+                      Course title
+                    </label>
+                    <input
+                      id="editcourse-field-1"
+                      type="text"
+                      className={styles.input}
+                      value={course.name}
+                      onChange={handleFieldChange("name")}
+                      required
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label htmlFor="course-category" className={styles.label}>
+                      Category
+                    </label>
+                    <div className={styles.selectWrap}>
+                      <select
+                        id="course-category"
+                        className={styles.select}
+                        value={course.category}
+                        onChange={handleFieldChange("category")}
+                        required
+                      >
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                        {!categories.includes(course.category) && (
+                          <option value={course.category}>{course.category}</option>
+                        )}
+                      </select>
+                      <svg
+                        className={styles.selectChevron}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label htmlFor="editcourse-field-2" className={styles.label}>
+                      Description
+                    </label>
+                    <textarea
+                      id="editcourse-field-2"
+                      className={styles.textarea}
+                      rows="4"
+                      value={course.description}
+                      onChange={handleFieldChange("description")}
+                      required
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Publish status</label>
+                    <div className={styles.toggleGroup}>
+                      <label className={styles.switch}>
+                        <input
+                          type="checkbox"
+                          aria-label="Publish course"
+                          checked={course.published}
+                          onChange={handleTogglePublished}
+                        />
+                        <span className={styles.switchSlider} />
+                      </label>
+                      <span className={styles.toggleLabel}>This course is visible to learners</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.card}>
+                  <div className={styles.lessonsHeader}>
+                    <h2 className={styles.cardTitle}>Lessons ({lessons.length})</h2>
+                    <button
+                      type="button"
+                      onClick={handleOpenAddLesson}
+                      disabled={saving}
+                      className={styles.addLessonButton}
+                      title="Add lesson"
+                      aria-label="Add lesson"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={styles.plusIcon}
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {lessons.length === 0 && (
+                    <p className={styles.lessonsEmpty}>No lessons yet. Add your first lesson.</p>
+                  )}
+                  {lessons.length > 0 && (
+                    <div className={styles.lessons}>
+                      {lessons.map((lesson, idx) => (
+                        <div key={lesson._id || idx} className={styles.lesson}>
+                          <div className={styles.lessonLeft}>
+                            <svg
+                              className={styles.dragIcon}
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <circle cx="9" cy="5" r="1" />
+                              <circle cx="9" cy="12" r="1" />
+                              <circle cx="9" cy="19" r="1" />
+                              <circle cx="15" cy="5" r="1" />
+                              <circle cx="15" cy="12" r="1" />
+                              <circle cx="15" cy="19" r="1" />
+                            </svg>
+                            <span className={styles.lessonNumber}>{idx + 1}</span>
+                            <span className={styles.lessonName}>{lesson.title}</span>
+                          </div>
+
+                          <div className={styles.lessonActions}>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditLesson(idx)}
+                              disabled={saving}
+                              className={styles.editLessonButton}
+                              title="Edit lesson"
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteLesson(idx)}
+                              disabled={saving}
+                              className={styles.deleteLessonButton}
+                              title="Delete lesson"
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.bottomBar}>
+                <button
+                  type="button"
+                  onClick={handleDeleteCourse}
+                  disabled={saving}
+                  className={styles.dangerButton}
+                >
+                  Delete course
+                </button>
+
+                <div className={styles.actionsGroup}>
+                  <Link to="/teach/courses" className={styles.cancelButton}>
+                    Cancel
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSaveCourse}
+                    className={styles.saveButton}
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {mode !== "overview" && <form onSubmit={handleSaveLesson}>{["title", "content", "resource_url"].map(field => <label key={field}>{field}<input value={lessonForm[field]} onChange={event => setLessonForm({ ...lessonForm, [field]: event.target.value })} /></label>)}<button disabled={saving}>Save lesson</button><button type="button" onClick={() => setMode("overview")}>Cancel</button></form>}
+        </main>
+      </div>
+    </div>
+  );
 }
