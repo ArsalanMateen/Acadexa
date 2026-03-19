@@ -1,6 +1,10 @@
 import useRecordScope from "../../../shared/hooks/useRecordScope";
 import CourseImage from "../../../shared/components/CourseImage";
-import { CourseSkeletons, Skeleton, PageState } from "../../../shared/components/ui";
+import {
+  CourseSkeletons,
+  Skeleton,
+  PageState,
+} from "../../../shared/components/ui";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../shared/session/auth-helper";
@@ -10,8 +14,80 @@ import { validStats } from "../enrollmentState";
 import styles from "./MyCourses.module.css";
 
 function CourseCardWithStats({ course, stats, statsLoading }) {
-  const counts = validStats(stats) ? stats : { totalEnrolled: "—", totalCompleted: "—" };
-  return <article><h2>{course.name}</h2><p>{course.published ? "Published" : "Draft"}</p><p>{statsLoading ? "Loading statistics" : `${counts.totalEnrolled} enrolled, ${counts.totalCompleted} completed`}</p><Link to={`/teach/course/edit/${course._id}`}>Edit course</Link> <Link to={`/course/${course._id}`}>Preview</Link></article>;
+  const counts = validStats(stats)
+    ? stats
+    : { totalEnrolled: "—", totalCompleted: "—" };
+  const lessons = course.lessons;
+
+  return (
+    <div className={styles.card}>
+      <CourseImage
+        loading="lazy"
+        key={course._id}
+        src={course.image}
+        alt={course.name}
+        className={styles.cardImage}
+      />
+      <div className={styles.cardBody}>
+        <div className={styles.cardTop}>
+          <span className={styles.cardCategory}>
+            {course.category}
+          </span>
+          {course.published ? (
+            <span className={styles.badgePublished}>Published</span>
+          ) : (
+            <span className={styles.badgeDraft}>Draft</span>
+          )}
+        </div>
+
+        <h3 className={styles.cardName}>{course.name}</h3>
+        <p className={styles.cardDescription}>{course.description}</p>
+
+        <div className={styles.stats}>
+          <div className={styles.stat}>
+            <span className={styles.statValue}>
+              {!statsLoading ? (
+                counts.totalEnrolled
+              ) : (
+                <Skeleton width="32px" height="22px" />
+              )}
+            </span>
+            <span className={styles.statLabel}>Enrolled</span>
+          </div>
+          <div className={styles.statDivider} />
+          <div className={styles.stat}>
+            <span className={styles.statValue}>
+              {!statsLoading ? (
+                counts.totalCompleted
+              ) : (
+                <Skeleton width="32px" height="22px" />
+              )}
+            </span>
+            <span className={styles.statLabel}>Completed</span>
+          </div>
+          <div className={styles.statDivider} />
+          <div className={styles.stat}>
+            <span className={styles.statValue}>{lessons.length}</span>
+            <span className={styles.statLabel}>
+              {lessons.length === 1 ? "Lesson" : "Lessons"}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.cardActions}>
+          <Link
+            to={`/teach/course/edit/${course._id}`}
+            className={styles.outlineButton}
+          >
+            Edit Course
+          </Link>
+          <Link to={`/course/${course._id}`} className={styles.filledButton}>
+            Preview
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function MyCourses() {
@@ -23,7 +99,7 @@ export default function MyCourses() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState("");
   const authData = useAuth();
-  const identity = `${authData?.user._id}:${authData?.token}`;
+  const identity = `${authData.user._id}:${authData.token}`;
   const capture = useRecordScope(identity);
   const [loadedIdentity, setLoadedIdentity] = useState(null);
 
@@ -39,37 +115,100 @@ export default function MyCourses() {
     setStatsLoading(true);
     setStatsError("");
 
-    if (authData) {
-      enrollmentStatsByInstructor({ t: authData.token }, signal).then((data) => {
-        if (signal.aborted || !isCurrent()) return;
-        if (
-          !data ||
-          data.error ||
-          data.aborted ||
-          typeof data !== "object" ||
-          Array.isArray(data)
-        ) {
-          setStatsError(data?.error || "Enrollment statistics are unavailable.");
-        } else setStatsByCourse(data);
+    enrollmentStatsByInstructor({ t: authData.token }, signal).then((data) => {
+      if (signal.aborted || !isCurrent()) return;
+      if (data.error) {
+        setStatsError(data.error);
+      } else if (typeof data !== "object" || Array.isArray(data)) {
+        setStatsError("Enrollment statistics are unavailable.");
+      } else {
+        setStatsByCourse(data);
+      }
 
-        setStatsLoading(false);
-      });
-      listByInstructor({ userId: authData.user._id }, { t: authData.token }, signal).then(
-        (data) => {
-          if (abortController.signal.aborted || !isCurrent()) return;
-          if (Array.isArray(data)) {
-            setCourses(data);
-          } else {
-            setError(data?.error || "Unable to load courses.");
-          }
+      setStatsLoading(false);
+    });
+    listByInstructor(
+      { userId: authData.user._id },
+      { t: authData.token },
+      signal,
+    ).then((data) => {
+      if (abortController.signal.aborted || !isCurrent()) return;
+      if (Array.isArray(data)) {
+        setCourses(data);
+      } else {
+        setError(data.error);
+      }
 
-          setLoading(false);
-        },
-      );
-    }
+      setLoading(false);
+    });
 
     return () => abortController.abort();
   }, [authData, identity, capture]);
 
-  return (<main className={styles.page}><h1>My courses</h1><Link to="/teach/course/new">Create course</Link>{statsError && <p role="alert">{statsError}</p>}{loading || loadedIdentity !== identity ? <CourseSkeletons /> : error ? <PageState error message={error} /> : courses.length === 0 ? <PageState message="No courses yet." /> : courses.map(course => <CourseCardWithStats key={course._id} course={course} stats={statsByCourse[String(course._id)]} statsLoading={statsLoading} />)}</main>);
+  return (
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <main className={styles.main}>
+          <div className={styles.header}>
+            <div className={styles.titleRow}>
+              <h1 className={styles.title}>My Courses</h1>
+              <Link
+                to="/teach/course/new"
+                className={styles.addButton}
+                aria-label="Create course"
+                title="Create course"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={styles.plusIcon}
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </Link>
+            </div>
+            <p className={styles.subtitle}>
+              Manage your published courses, curriculum lessons, and monitor
+              learner progress.
+            </p>
+          </div>
+
+          {statsError && !loading && loadedIdentity === identity && !error && (
+            <p role="alert">{statsError}</p>
+          )}
+          {loading || loadedIdentity !== identity ? (
+            <CourseSkeletons className={styles.grid} />
+          ) : error ? (
+            <PageState
+              error
+              title="Unable to load courses"
+              message={error}
+            />
+          ) : courses.length === 0 ? (
+            <PageState
+              icon="teach"
+              title="Create your first course"
+              message="Share your expertise with learners worldwide. Structure your lessons, add video lectures, and track student enrollment."
+            />
+          ) : (
+            <div className={styles.grid}>
+              {courses.map((course) => (
+                <CourseCardWithStats
+                  key={course._id}
+                  course={course}
+                  stats={statsByCourse[String(course._id)]}
+                  statsLoading={statsLoading}
+                />
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
 }
