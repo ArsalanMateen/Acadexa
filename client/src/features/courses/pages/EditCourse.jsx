@@ -538,7 +538,121 @@ export default function EditCourse() {
             </div>
           )}
 
-          {mode !== "overview" && <form onSubmit={handleSaveLesson}>{["title", "content", "resource_url"].map(field => <label key={field}>{field}<input value={lessonForm[field]} onChange={event => setLessonForm({ ...lessonForm, [field]: event.target.value })} /></label>)}<button disabled={saving}>Save lesson</button><button type="button" onClick={() => setMode("overview")}>Cancel</button></form>}
+          {(mode === "add-lesson" || mode === "edit-lesson") && (
+            <div>
+              <button type="button" onClick={() => setMode("overview")} className={styles.back}>
+                <svg
+                  className={styles.backIcon}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12 19 5 12 12 5" />
+                </svg>
+                <span>Back to edit course</span>
+              </button>
+
+              <div className={styles.lessonHeader}>
+                <div className={styles.lessonHeaderInfo}>
+                  <div className={styles.lessonHeaderTitleRow}>
+                    <span className={styles.lessonHeaderName}>{course.name}</span>
+                    {course.published ? (
+                      <span className={styles.badgePublished}>Published</span>
+                    ) : (
+                      <span className={styles.badgeDraft}>Draft</span>
+                    )}
+                  </div>
+                  <h1 className={styles.lessonFormTitle}>
+                    {mode === "edit-lesson" ? "Edit Lesson" : "Add Lesson"}
+                  </h1>
+                  <p className={styles.lessonFormSubtitle}>
+                    {mode === "edit-lesson"
+                      ? "Update your lesson details and learning materials."
+                      : "Add a new lesson to your course. Keep the content clear and focused."}
+                  </p>
+                </div>
+              </div>
+
+              <div className={styles.grid}>
+                <div className={styles.card}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="editcourse-field-3" className={styles.label}>
+                      Lesson title
+                    </label>
+                    <input
+                      id="editcourse-field-3"
+                      type="text"
+                      className={styles.input}
+                      placeholder="Enter lesson title"
+                      value={lessonForm.title}
+                      onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                      required
+                    />
+                    <span className={styles.fieldHint}>Keep it short and descriptive.</span>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label htmlFor="editcourse-field-4" className={styles.label}>
+                      Lesson content
+                    </label>
+                    <textarea
+                      id="editcourse-field-4"
+                      className={styles.textarea}
+                      rows="6"
+                      placeholder="Write the lesson content here..."
+                      value={lessonForm.content}
+                      onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
+                    />
+                    <span className={styles.fieldHint}>
+                      You can include text, code examples, or any learning material.
+                    </span>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label htmlFor="editcourse-field-5" className={styles.label}>
+                      Resource URL (optional)
+                    </label>
+                    <input
+                      id="editcourse-field-5"
+                      type="url"
+                      className={styles.input}
+                      placeholder="https://example.com"
+                      value={lessonForm.resource_url}
+                      onChange={(e) =>
+                        setLessonForm({ ...lessonForm, resource_url: e.target.value })
+                      }
+                    />
+                    <span className={styles.fieldHint}>
+                      Add a link to an external resource (e.g., video, article, documentation).
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className={styles.lessonBottomBar}>
+                <button
+                  type="button"
+                  onClick={() => setMode("overview")}
+                  className={styles.cancelButton}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveLesson}
+                  disabled={saving}
+                  className={styles.submitButton}
+                >
+                  {mode === "edit-lesson" ? "Update" : "Add lesson"}
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

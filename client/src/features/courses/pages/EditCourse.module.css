@@ -101,6 +101,12 @@
   color: #1e293b;
 }
 
+.fieldHint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
 .input,
 .textarea {
   width: 100%;
@@ -390,6 +396,89 @@
 .cancelButton:hover {
   background-color: #f1f5f9;
   color: #0f172a;
+}
+
+.saveButton,
+.submitButton {
+  background-color: var(--color-primary);
+  border: none;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.65rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.saveButton:hover,
+.submitButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.lessonHeader {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.lessonHeaderInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lessonHeaderTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.lessonHeaderName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.badgePublished {
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.badgeDraft {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.lessonFormTitle {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.lessonFormSubtitle {
+  font-size: 0.92rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.lessonBottomBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 .switch:has(input:focus-visible) {
