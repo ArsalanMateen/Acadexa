@@ -15,7 +15,7 @@ export default function EditCourse() {
   const imageInput = useRef(null);
   const previewReader = useRef(null);
   const authData = useAuth();
-  const identity = `${courseId}:${authData?.token}`;
+  const identity = `${courseId}:${authData.token}`;
   const [loadedIdentity, setLoadedIdentity] = useState(null);
 
   const [course, setCourse] = useState({
@@ -25,6 +25,7 @@ export default function EditCourse() {
     published: false,
     lessons: [],
   });
+  const [initialCourse, setInitialCourse] = useState(null);
 
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -54,36 +55,42 @@ export default function EditCourse() {
 
     setImage(null);
     setImagePreview(null);
+    setInitialCourse(null);
     setSaving(false);
     setError("");
     setMode("overview");
     setEditingLessonIdx(null);
     setLessonForm({ title: "", content: "", resource_url: "" });
 
-    read({ courseId }, abortController.signal, { t: authData?.token }).then((data) => {
-      if (abortController.signal.aborted) return;
-      if (!isCurrent()) return;
-      if (data && !data.error) {
-        if (data.instructor?._id !== authData.user._id) {
-          setLoadError("You can only edit your own courses.");
-          setLoading(false);
+    read({ courseId }, abortController.signal, { t: authData.token }).then(
+      (data) => {
+        if (abortController.signal.aborted) return;
+        if (!isCurrent()) return;
+        if (!data.error) {
+          if (data.instructor._id !== authData.user._id) {
+            setLoadError("You can only edit your own courses.");
+            setLoading(false);
 
-          return;
+            return;
+          }
+
+          const loadedCourse = {
+            name: data.name,
+            description: data.description || "",
+            category: data.category,
+            published: Boolean(data.published),
+            lessons: data.lessons,
+            image: data.image || "",
+          };
+          setCourse(loadedCourse);
+          setInitialCourse(loadedCourse);
+        } else {
+          setLoadError(data.error);
         }
 
-        setCourse({
-          name: data.name || "",
-          description: data.description || "",
-          category: data.category || "Web Development",
-          published: Boolean(data.published),
-          lessons: data.lessons || [],
-          image: data.image || "",
-        });
-      }
-      if (!data || data.error) setLoadError(data?.error || "Unable to load this page.");
-
-      setLoading(false);
-    });
+        setLoading(false);
+      },
+    );
 
     return () => {
       abortController.abort();
@@ -116,13 +123,41 @@ export default function EditCourse() {
     }
   };
 
+  const isCourseDirty =
+    Boolean(initialCourse) &&
+    Boolean(course.name.trim()) &&
+    Boolean(course.category.trim()) &&
+    (Boolean(image) ||
+      course.name !== initialCourse.name ||
+      course.description !== initialCourse.description ||
+      course.category !== initialCourse.category ||
+      Boolean(course.published) !== Boolean(initialCourse.published) ||
+      JSON.stringify(course.lessons) !== JSON.stringify(initialCourse.lessons));
+
+  const currentEditingLesson =
+    editingLessonIdx !== null
+      ? course.lessons[editingLessonIdx]
+      : null;
+
+  const isLessonDirty =
+    mode === "add-lesson"
+      ? Boolean(lessonForm.title.trim())
+      : Boolean(
+          currentEditingLesson &&
+            lessonForm.title.trim() &&
+            (lessonForm.title !== (currentEditingLesson.title || "") ||
+              lessonForm.content !== (currentEditingLesson.content || "") ||
+              lessonForm.resource_url !==
+                (currentEditingLesson.resource_url || "")),
+        );
+
   const handleTogglePublished = () => {
     setCourse((prev) => ({ ...prev, published: !prev.published }));
   };
 
   const handleSaveCourse = async (e) => {
     if (e) e.preventDefault();
-    if (saving) return;
+    if (saving || !isCourseDirty) return;
     if (!course.name.trim() || !course.category.trim()) {
       setError("Course title and category are required.");
       return;
@@ -147,9 +182,9 @@ export default function EditCourse() {
     const data = await update({ courseId }, { t: authData.token }, courseData);
 
     if (!isCurrent()) return;
-    if (data && data.error) {
+    if (data.error) {
       setError(data.error);
-    } else if (data) {
+    } else {
       navigate("/teach/courses");
     }
 
@@ -158,7 +193,9 @@ export default function EditCourse() {
 
   const handleDeleteCourse = async () => {
     if (
-      window.confirm("Are you sure you want to delete this entire course? This cannot be undone.")
+      window.confirm(
+        "Are you sure you want to delete this entire course? This cannot be undone.",
+      )
     ) {
       if (saving) return;
 
@@ -169,9 +206,9 @@ export default function EditCourse() {
       const data = await remove({ courseId }, { t: authData.token });
 
       if (!isCurrent()) return;
-      if (data && !data.error) {
+      if (!data.error) {
         navigate("/teach/courses");
-      } else setError(data?.error || "Unable to delete course.");
+      } else setError(data.error);
 
       setSaving(false);
     }
@@ -210,12 +247,21 @@ export default function EditCourse() {
 
       const isCurrent = capture();
 
-      const data = await update({ courseId }, { t: authData.token }, courseData);
+      const data = await update(
+        { courseId },
+        { t: authData.token },
+        courseData,
+      );
 
       if (!isCurrent()) return;
-      if (data?.error) {
+      if (data.error) {
         setError(data.error);
-      } else setCourse((prev) => ({ ...prev, lessons: data.lessons }));
+      } else {
+        setCourse((prev) => ({ ...prev, lessons: data.lessons }));
+        setInitialCourse((prev) =>
+          prev ? { ...prev, lessons: data.lessons } : prev,
+        );
+      }
 
       setSaving(false);
     }
@@ -224,7 +270,7 @@ export default function EditCourse() {
   const handleSaveLesson = async (e) => {
     e.preventDefault();
 
-    if (saving) return;
+    if (saving || !isLessonDirty) return;
     if (!lessonForm.title.trim()) {
       setError("Lesson title is required.");
       return;
@@ -262,10 +308,13 @@ export default function EditCourse() {
     const data = await update({ courseId }, { t: authData.token }, courseData);
 
     if (!isCurrent()) return;
-    if (data?.error) {
+    if (data.error) {
       setError(data.error);
     } else {
       setCourse((prev) => ({ ...prev, lessons: data.lessons }));
+      setInitialCourse((prev) =>
+        prev ? { ...prev, lessons: data.lessons } : prev,
+      );
       setMode("overview");
     }
 
@@ -275,9 +324,16 @@ export default function EditCourse() {
   if (loading || loadedIdentity !== identity) {
     return <PageSkeleton variant="form" label="Loading course editor" />;
   }
-  if (loadError) return <PageState error message={loadError} />;
+  if (loadError)
+    return (
+      <PageState
+        error
+        title="Unable to load course editor"
+        message={loadError}
+      />
+    );
 
-  const lessons = course.lessons || [];
+  const lessons = course.lessons;
 
   return (
     <div className={styles.page}>
@@ -305,7 +361,8 @@ export default function EditCourse() {
               <header className={styles.header}>
                 <h1 className={styles.title}>Edit Course</h1>
                 <p className={styles.subtitle}>
-                  Update your course details, manage lessons, and keep your content up to date.
+                  Update your course details, manage lessons, and keep your
+                  content up to date.
                 </p>
               </header>
 
@@ -326,7 +383,7 @@ export default function EditCourse() {
                       inputId="edit-course-image"
                       inputRef={imageInput}
                       src={imagePreview || course.image}
-                      alt={course.name || "Course cover preview"}
+                      alt={course.name}
                       fileName={image?.name}
                       onChange={handleImageChange}
                       disabled={saving}
@@ -334,7 +391,10 @@ export default function EditCourse() {
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label htmlFor="editcourse-field-1" className={styles.label}>
+                    <label
+                      htmlFor="editcourse-field-1"
+                      className={styles.label}
+                    >
                       Course title
                     </label>
                     <input
@@ -365,7 +425,9 @@ export default function EditCourse() {
                           </option>
                         ))}
                         {!categories.includes(course.category) && (
-                          <option value={course.category}>{course.category}</option>
+                          <option value={course.category}>
+                            {course.category}
+                          </option>
                         )}
                       </select>
                       <svg
@@ -381,7 +443,10 @@ export default function EditCourse() {
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label htmlFor="editcourse-field-2" className={styles.label}>
+                    <label
+                      htmlFor="editcourse-field-2"
+                      className={styles.label}
+                    >
                       Description
                     </label>
                     <textarea
@@ -406,14 +471,18 @@ export default function EditCourse() {
                         />
                         <span className={styles.switchSlider} />
                       </label>
-                      <span className={styles.toggleLabel}>This course is visible to learners</span>
+                      <span className={styles.toggleLabel}>
+                        This course is visible to learners
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className={styles.card}>
                   <div className={styles.lessonsHeader}>
-                    <h2 className={styles.cardTitle}>Lessons ({lessons.length})</h2>
+                    <h2 className={styles.cardTitle}>
+                      Lessons ({lessons.length})
+                    </h2>
                     <button
                       type="button"
                       onClick={handleOpenAddLesson}
@@ -438,12 +507,17 @@ export default function EditCourse() {
                   </div>
 
                   {lessons.length === 0 && (
-                    <p className={styles.lessonsEmpty}>No lessons yet. Add your first lesson.</p>
+                    <PageState
+                      compact
+                      icon="curriculum"
+                      title="No lessons in curriculum"
+                      message="Use the 'New Lesson' button above to add video lectures, reading notes, and resources to your course."
+                    />
                   )}
                   {lessons.length > 0 && (
                     <div className={styles.lessons}>
                       {lessons.map((lesson, idx) => (
-                        <div key={lesson._id || idx} className={styles.lesson}>
+                        <div key={lesson._id} className={styles.lesson}>
                           <div className={styles.lessonLeft}>
                             <svg
                               className={styles.dragIcon}
@@ -459,8 +533,12 @@ export default function EditCourse() {
                               <circle cx="15" cy="12" r="1" />
                               <circle cx="15" cy="19" r="1" />
                             </svg>
-                            <span className={styles.lessonNumber}>{idx + 1}</span>
-                            <span className={styles.lessonName}>{lesson.title}</span>
+                            <span className={styles.lessonNumber}>
+                              {idx + 1}
+                            </span>
+                            <span className={styles.lessonName}>
+                              {lesson.title}
+                            </span>
                           </div>
 
                           <div className={styles.lessonActions}>
@@ -529,7 +607,7 @@ export default function EditCourse() {
                     type="button"
                     onClick={handleSaveCourse}
                     className={styles.saveButton}
-                    disabled={saving}
+                    disabled={saving || !isCourseDirty}
                   >
                     {saving ? "Saving..." : "Save"}
                   </button>
@@ -540,7 +618,11 @@ export default function EditCourse() {
 
           {(mode === "add-lesson" || mode === "edit-lesson") && (
             <div>
-              <button type="button" onClick={() => setMode("overview")} className={styles.back}>
+              <button
+                type="button"
+                onClick={() => setMode("overview")}
+                className={styles.back}
+              >
                 <svg
                   className={styles.backIcon}
                   viewBox="0 0 24 24"
@@ -559,7 +641,9 @@ export default function EditCourse() {
               <div className={styles.lessonHeader}>
                 <div className={styles.lessonHeaderInfo}>
                   <div className={styles.lessonHeaderTitleRow}>
-                    <span className={styles.lessonHeaderName}>{course.name}</span>
+                    <span className={styles.lessonHeaderName}>
+                      {course.name}
+                    </span>
                     {course.published ? (
                       <span className={styles.badgePublished}>Published</span>
                     ) : (
@@ -580,7 +664,10 @@ export default function EditCourse() {
               <div className={styles.grid}>
                 <div className={styles.card}>
                   <div className={styles.formGroup}>
-                    <label htmlFor="editcourse-field-3" className={styles.label}>
+                    <label
+                      htmlFor="editcourse-field-3"
+                      className={styles.label}
+                    >
                       Lesson title
                     </label>
                     <input
@@ -589,14 +676,21 @@ export default function EditCourse() {
                       className={styles.input}
                       placeholder="Enter lesson title"
                       value={lessonForm.title}
-                      onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                      onChange={(e) =>
+                        setLessonForm({ ...lessonForm, title: e.target.value })
+                      }
                       required
                     />
-                    <span className={styles.fieldHint}>Keep it short and descriptive.</span>
+                    <span className={styles.fieldHint}>
+                      Keep it short and descriptive.
+                    </span>
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label htmlFor="editcourse-field-4" className={styles.label}>
+                    <label
+                      htmlFor="editcourse-field-4"
+                      className={styles.label}
+                    >
                       Lesson content
                     </label>
                     <textarea
@@ -605,15 +699,24 @@ export default function EditCourse() {
                       rows="6"
                       placeholder="Write the lesson content here..."
                       value={lessonForm.content}
-                      onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
+                      onChange={(e) =>
+                        setLessonForm({
+                          ...lessonForm,
+                          content: e.target.value,
+                        })
+                      }
                     />
                     <span className={styles.fieldHint}>
-                      You can include text, code examples, or any learning material.
+                      You can include text, code examples, or any learning
+                      material.
                     </span>
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label htmlFor="editcourse-field-5" className={styles.label}>
+                    <label
+                      htmlFor="editcourse-field-5"
+                      className={styles.label}
+                    >
                       Resource URL (optional)
                     </label>
                     <input
@@ -623,15 +726,58 @@ export default function EditCourse() {
                       placeholder="https://example.com"
                       value={lessonForm.resource_url}
                       onChange={(e) =>
-                        setLessonForm({ ...lessonForm, resource_url: e.target.value })
+                        setLessonForm({
+                          ...lessonForm,
+                          resource_url: e.target.value,
+                        })
                       }
                     />
                     <span className={styles.fieldHint}>
-                      Add a link to an external resource (e.g., video, article, documentation).
+                      Add a link to an external resource (e.g., video, article,
+                      documentation).
                     </span>
                   </div>
                 </div>
 
+                <div className={styles.card}>
+                  <div className={styles.previewHeader}>
+                    <h2 className={styles.cardTitle}>Preview</h2>
+                    <span className={styles.previewSubtitle}>
+                      This is how your lesson will appear to learners.
+                    </span>
+                  </div>
+
+                  <div className={styles.previewCard}>
+                    <h3 className={styles.previewTitle}>
+                      {lessonForm.title || "Lesson title"}
+                    </h3>
+
+                    <p className={styles.previewContent}>
+                      {lessonForm.content ||
+                        "Lesson content will be displayed here."}
+                    </p>
+
+                    {lessonForm.resource_url && (
+                      <div className={styles.previewResource}>
+                        <div className={styles.previewResourceLeft}>
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                          </svg>
+                          <span>Resource link</span>
+                        </div>
+                        <span className={styles.previewOpenLink}>Open</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className={styles.lessonBottomBar}>
@@ -645,7 +791,7 @@ export default function EditCourse() {
                 <button
                   type="button"
                   onClick={handleSaveLesson}
-                  disabled={saving}
+                  disabled={saving || !isLessonDirty}
                   className={styles.submitButton}
                 >
                   {mode === "edit-lesson" ? "Update" : "Add lesson"}
