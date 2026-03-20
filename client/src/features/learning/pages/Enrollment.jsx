@@ -1,6 +1,10 @@
 import CourseImage from "../../../shared/components/CourseImage";
 import useRecordScope from "../../../shared/hooks/useRecordScope";
-import { getEmbedUrl, isDirectVideo, safeHttpUrl } from "../../../shared/utils/resources";
+import {
+  getEmbedUrl,
+  isDirectVideo,
+  safeHttpUrl,
+} from "../../../shared/utils/resources";
 import { PageSkeleton, PageState } from "../../../shared/components/ui";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
@@ -10,11 +14,22 @@ import styles from "./Enrollment.module.css";
 
 function renderFormattedContent(text) {
   if (!text) {
-    return <p className={styles.emptyContent}>No content available for this lesson.</p>;
+    return (
+      <PageState
+        compact
+        icon="notes"
+        title="No written notes"
+        message="This lesson does not contain reading notes. Watch the video lecture or review the attached resources."
+      />
+    );
   }
 
   return text.split(/\n\s*\n/).map((paragraph, index) => (
-    <p key={index} className={styles.paragraph} style={{ whiteSpace: "pre-wrap" }}>
+    <p
+      key={index}
+      className={styles.paragraph}
+      style={{ whiteSpace: "pre-wrap" }}
+    >
       {paragraph}
     </p>
   ));
@@ -44,7 +59,7 @@ export default function Enrollment() {
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const identity = `${enrollmentId}:${authData?.token}`;
+  const identity = `${enrollmentId}:${authData.token}`;
   const capture = useRecordScope(identity);
   const [loadedIdentity, setLoadedIdentity] = useState(null);
   const [error, setError] = useState("");
@@ -62,29 +77,33 @@ export default function Enrollment() {
     setError("");
     setSaving(false);
 
-    read({ enrollmentId }, { t: authData.token }, abortController.signal).then((data) => {
-      if (abortController.signal.aborted || !isCurrent()) return;
-      if (data && !data.error) {
-        setEnrollment(data);
+    read({ enrollmentId }, { t: authData.token }, abortController.signal).then(
+      (data) => {
+        if (abortController.signal.aborted || !isCurrent()) return;
+        if (!data.error) {
+          setEnrollment(data);
 
-        const firstIncomplete = (data.course?.lessons || []).findIndex(
-          (lesson) =>
-            !data.lessonStatus?.find((status) => String(status.lesson) === String(lesson._id))
-              ?.complete,
-        );
+          const firstIncomplete = data.course.lessons.findIndex(
+            (lesson) =>
+              !data.lessonStatus.find(
+                (status) => String(status.lesson) === String(lesson._id),
+              )?.complete,
+          );
 
-        if (firstIncomplete !== -1) {
-          setActiveLessonIndex(firstIncomplete);
+          if (firstIncomplete !== -1) {
+            setActiveLessonIndex(firstIncomplete);
+          } else {
+            const totalLessons = data.course.lessons.length;
+
+            setActiveLessonIndex(Math.max(0, totalLessons - 1));
+          }
         } else {
-          const totalLessons = data.course?.lessons?.length || data.lessonStatus?.length || 0;
-
-          setActiveLessonIndex(Math.max(0, totalLessons - 1));
+          setLoadError(data.error);
         }
-      }
-      if (!data || data.error) setLoadError(data?.error || "Unable to load this page.");
 
-      setLoading(false);
-    });
+        setLoading(false);
+      },
+    );
 
     return () => abortController.abort();
   }, [enrollmentId, authData, identity, capture]);
@@ -92,25 +111,57 @@ export default function Enrollment() {
   if (loading || loadedIdentity !== identity) {
     return <PageSkeleton variant="classroom" label="Loading classroom" />;
   }
-  if (loadError) return <PageState error message={loadError} />;
+  if (loadError)
+    return (
+      <PageState
+        error
+        title="Classroom unavailable"
+        message={loadError}
+      />
+    );
 
-  const course = enrollment.course || { lessons: [] };
-  const lessons = course.lessons || [];
-  const lessonStatuses = enrollment.lessonStatus || [];
+  if (!enrollment.course) {
+    return (
+      <PageState
+        icon="compass"
+        title="Course no longer available"
+        message="This course has been archived or is no longer accessible on Acadexa."
+      />
+    );
+  }
 
-  const currentLesson = lessons[activeLessonIndex] || {};
-  const currentStatus =
-    lessonStatuses.find((status) => String(status.lesson) === String(currentLesson._id)) || {};
+  const course = enrollment.course;
+  const lessons = course.lessons;
+
+  if (!lessons.length) {
+    return (
+      <PageState
+        icon="curriculum"
+        title="Lessons coming soon"
+        message="Your instructor is currently preparing the lesson materials for this course."
+      />
+    );
+  }
+
+  const lessonStatuses = enrollment.lessonStatus;
+  const currentLesson = lessons[activeLessonIndex];
+  const currentStatus = lessonStatuses.find(
+    (status) => String(status.lesson) === String(currentLesson._id),
+  );
 
   const completedCount = lessons.filter(
     (lesson) =>
-      lessonStatuses.find((status) => String(status.lesson) === String(lesson._id))?.complete,
+      lessonStatuses.find(
+        (status) => String(status.lesson) === String(lesson._id),
+      )?.complete,
   ).length;
-  const progressPercentage =
-    lessons.length > 0 ? Math.min(100, Math.round((completedCount / lessons.length) * 100)) : 0;
+  const progressPercentage = Math.min(
+    100,
+    Math.round((completedCount / lessons.length) * 100),
+  );
 
   const handleToggleComplete = async () => {
-    if (saving || !currentStatus._id) return false;
+    if (saving) return false;
 
     setSaving(true);
     setError("");
@@ -127,7 +178,7 @@ export default function Enrollment() {
 
     setSaving(false);
 
-    if (data?.error) {
+    if (data.error) {
       setError(data.error);
       return false;
     }
@@ -155,13 +206,6 @@ export default function Enrollment() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
-
-  if (!enrollment.course) {
-    return <PageState message="This course is no longer available." />;
-  }
-  if (!lessons.length) {
-    return <PageState message="Your instructor hasn't added lessons to this course yet." />;
-  }
 
   const resourceUrl = safeHttpUrl(currentLesson.resource_url);
   const embedUrl = getEmbedUrl(resourceUrl);
@@ -193,14 +237,16 @@ export default function Enrollment() {
                 <CourseImage
                   loading="eager"
                   key={course._id}
-                  src={course.image || "/course-image-fallback.svg"}
+                  src={course.image}
                   alt={course.name}
                   className={styles.thumbnail}
                 />
               </div>
 
               <h2 className={styles.courseTitle}>{course.name}</h2>
-              <div className={styles.instructor}>By {course.instructor?.name || "Instructor"}</div>
+              <div className={styles.instructor}>
+                By {course.instructor.name}
+              </div>
 
               <div className={styles.lessonsBadge}>
                 <svg
@@ -241,13 +287,14 @@ export default function Enrollment() {
 
             <div className={styles.lessons}>
               {lessons.map((lesson, idx) => {
-                const status =
-                  lessonStatuses.find((item) => String(item.lesson) === String(lesson._id)) || {};
+                const status = lessonStatuses.find(
+                  (item) => String(item.lesson) === String(lesson._id),
+                );
                 const isActive = idx === activeLessonIndex;
 
                 return (
                   <button
-                    key={lesson._id || idx}
+                    key={lesson._id}
                     type="button"
                     disabled={saving}
                     onClick={() => {
@@ -288,7 +335,64 @@ export default function Enrollment() {
 
             <h1 className={styles.lessonTitle}>{currentLesson.title}</h1>
 
-            <div>{embedUrl ? <iframe src={embedUrl} title={currentLesson.title} allowFullScreen /> : isDirectVideoResource ? <video controls src={resourceUrl} /> : null}{renderFormattedContent(currentLesson.content)}{resourceUrl && <a href={resourceUrl} target="_blank" rel="noopener noreferrer">{getResourceTitle(resourceUrl, currentLesson.title)}</a>}</div>
+            {embedUrl ? (
+              <div className={styles.video}>
+                <iframe
+                  src={embedUrl}
+                  title={currentLesson.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : isDirectVideoResource ? (
+              <div className={styles.video}>
+                <video src={resourceUrl} controls />
+              </div>
+            ) : null}
+
+            <div className={styles.contentSection}>
+              <h2 className={styles.sectionTitle}>Lesson Content</h2>
+              <div className={styles.contentCard}>
+                {renderFormattedContent(currentLesson.content)}
+              </div>
+            </div>
+
+            {resourceUrl && (
+              <div className={styles.resourceSection}>
+                <h2 className={styles.sectionTitle}>Resource</h2>
+                <a
+                  href={resourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.resourceCard}
+                >
+                  <div className={styles.resourceIcon}>
+                    <svg
+                      className={styles.externalIcon}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </div>
+                  <div className={styles.resourceDetails}>
+                    <div className={styles.resourceTitle}>
+                      {getResourceTitle(
+                        currentLesson.resource_url,
+                        currentLesson.title,
+                      )}
+                    </div>
+                  </div>
+                </a>
+              </div>
+            )}
+
             <div className={styles.navBar}>
               <button
                 type="button"
@@ -316,10 +420,12 @@ export default function Enrollment() {
                 <button
                   type="button"
                   onClick={handleToggleComplete}
-                  disabled={saving || !currentStatus._id}
+                  disabled={saving}
                   className={`${styles.checkButton} ${currentStatus.complete ? styles.checkButtonActive : ""}`}
                   title={
-                    currentStatus.complete ? "Click to mark incomplete" : "Click to mark complete"
+                    currentStatus.complete
+                      ? "Click to mark incomplete"
+                      : "Click to mark complete"
                   }
                 >
                   <svg
@@ -332,7 +438,9 @@ export default function Enrollment() {
                   >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                  <span>{currentStatus.complete ? "Completed" : "Mark as completed"}</span>
+                  <span>
+                    {currentStatus.complete ? "Completed" : "Mark as completed"}
+                  </span>
                 </button>
 
                 <button
