@@ -167,5 +167,200 @@ export default function Enrollment() {
   const embedUrl = getEmbedUrl(resourceUrl);
   const isDirectVideoResource = isDirectVideo(resourceUrl);
 
-  return (<main className={styles.page}><h1>{course.name}</h1><nav aria-label="Lessons">{lessons.map((lesson, idx) => <button key={lesson._id} disabled={saving} onClick={() => setActiveLessonIndex(idx)}>{lesson.title}</button>)}</nav><h2>{currentLesson.title}</h2>{embedUrl ? <iframe src={embedUrl} title={currentLesson.title} allowFullScreen /> : isDirectVideoResource ? <video src={resourceUrl} controls /> : null}{renderFormattedContent(currentLesson.content)}{resourceUrl && <a href={resourceUrl} target="_blank" rel="noopener noreferrer">{getResourceTitle(resourceUrl, currentLesson.title)}</a>}<p>{completedCount} of {lessons.length} completed ({progressPercentage}%)</p>{error && <p role="alert">{error}</p>}<button onClick={handlePrevLesson} disabled={saving || activeLessonIndex === 0}>Previous</button><button onClick={handleToggleComplete} disabled={saving || !currentStatus._id}>{currentStatus.complete ? "Completed" : "Mark completed"}</button><button onClick={handleNextLesson} disabled={saving || activeLessonIndex >= lessons.length - 1}>Next</button></main>);
+  return (
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <Link to="/courses" className={styles.back}>
+          <svg
+            className={styles.backIcon}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          <span>Back to courses</span>
+        </Link>
+
+        <div className={styles.grid}>
+          <aside className={styles.sidebar}>
+            <div className={styles.courseSummary}>
+              <div className={styles.thumbnailWrap}>
+                <CourseImage
+                  loading="eager"
+                  key={course._id}
+                  src={course.image || "/course-image-fallback.svg"}
+                  alt={course.name}
+                  className={styles.thumbnail}
+                />
+              </div>
+
+              <h2 className={styles.courseTitle}>{course.name}</h2>
+              <div className={styles.instructor}>By {course.instructor?.name || "Instructor"}</div>
+
+              <div className={styles.lessonsBadge}>
+                <svg
+                  className={styles.docIcon}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                <span>
+                  {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
+                </span>
+              </div>
+
+              <div className={styles.progress}>
+                <div className={styles.progressTrack}>
+                  <div
+                    className={styles.progressFill}
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+                <div className={styles.progressMeta}>
+                  <span>
+                    {completedCount} of {lessons.length} completed
+                  </span>
+                  <span>{progressPercentage}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.lessons}>
+              {lessons.map((lesson, idx) => {
+                const status =
+                  lessonStatuses.find((item) => String(item.lesson) === String(lesson._id)) || {};
+                const isActive = idx === activeLessonIndex;
+
+                return (
+                  <button
+                    key={lesson._id || idx}
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      setActiveLessonIndex(idx);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className={`${styles.lesson} ${isActive ? styles.lessonActive : ""}`}
+                  >
+                    <div className={styles.lessonLeft}>
+                      <span className={styles.lessonNumber}>{idx + 1}.</span>
+                      <span className={styles.lessonName}>{lesson.title}</span>
+                    </div>
+                    {status.complete && (
+                      <svg
+                        className={styles.lessonCheck}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-label="Completed"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          <main className={styles.main}>
+            {error && <p role="alert">{error}</p>}
+            <div className={styles.eyebrow}>
+              Lesson {activeLessonIndex + 1} of {lessons.length}
+            </div>
+
+            <h1 className={styles.lessonTitle}>{currentLesson.title}</h1>
+
+            <div>{embedUrl ? <iframe src={embedUrl} title={currentLesson.title} allowFullScreen /> : isDirectVideoResource ? <video controls src={resourceUrl} /> : null}{renderFormattedContent(currentLesson.content)}{resourceUrl && <a href={resourceUrl} target="_blank" rel="noopener noreferrer">{getResourceTitle(resourceUrl, currentLesson.title)}</a>}</div>
+            <div className={styles.navBar}>
+              <button
+                type="button"
+                onClick={handlePrevLesson}
+                disabled={saving || activeLessonIndex === 0}
+                className={styles.previousButton}
+                title="Previous lesson"
+                aria-label="Previous lesson"
+              >
+                <svg
+                  className={styles.navArrow}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12 19 5 12 12 5" />
+                </svg>
+              </button>
+
+              <div className={styles.navRight}>
+                <button
+                  type="button"
+                  onClick={handleToggleComplete}
+                  disabled={saving || !currentStatus._id}
+                  className={`${styles.checkButton} ${currentStatus.complete ? styles.checkButtonActive : ""}`}
+                  title={
+                    currentStatus.complete ? "Click to mark incomplete" : "Click to mark complete"
+                  }
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>{currentStatus.complete ? "Completed" : "Mark as completed"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNextLesson}
+                  disabled={saving || activeLessonIndex >= lessons.length - 1}
+                  className={styles.nextButton}
+                  title="Next lesson"
+                  aria-label="Next lesson"
+                >
+                  <svg
+                    className={styles.navArrow}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
 }
