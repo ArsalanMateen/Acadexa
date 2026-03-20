@@ -13,9 +13,10 @@ export default function EditProfile() {
   const [fetching, setFetching] = useState(true);
   const [loadError, setLoadError] = useState("");
   const authData = useAuth();
-  const identity = `${userId}:${authData?.token}`;
+  const identity = `${userId}:${authData.token}`;
   const capture = useRecordScope(identity);
   const [loadedIdentity, setLoadedIdentity] = useState(null);
+  const [initialValues, setInitialValues] = useState(null);
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -32,7 +33,14 @@ export default function EditProfile() {
 
     // oxlint-disable-next-line react/set-state-in-effect -- Reset stale content when starting a new asynchronous request.
     setFetching(true);
-    setValues({ name: "", email: "", instructor: false, error: "", loading: false });
+    setInitialValues(null);
+    setValues({
+      name: "",
+      email: "",
+      instructor: false,
+      error: "",
+      loading: false,
+    });
     setLoadError("");
     setLoadedIdentity(identity);
 
@@ -41,15 +49,21 @@ export default function EditProfile() {
 
       setFetching(false);
 
-      if (data?.error || data?._id !== jwt.user._id) {
-        setLoadError(data?.error || "You can only edit your own profile.");
-        setValues((v) => ({ ...v, error: data?.error }));
-      } else if (data) {
+      if (data.error) {
+        setLoadError(data.error);
+        setValues((v) => ({ ...v, error: data.error }));
+      } else if (data._id !== jwt.user._id) {
+        setLoadError("You can only edit your own profile.");
+      } else {
+        const loaded = {
+          name: data.name || "",
+          email: data.email || "",
+          instructor: Boolean(data.instructor),
+        };
+        setInitialValues(loaded);
         setValues((v) => ({
           ...v,
-          name: data.name,
-          email: data.email,
-          instructor: Boolean(data.instructor),
+          ...loaded,
         }));
       }
     });
@@ -65,14 +79,23 @@ export default function EditProfile() {
     setValues({ ...values, instructor: event.target.checked });
   };
 
+  const isDirty =
+    Boolean(initialValues) &&
+    Boolean(values.name.trim()) &&
+    Boolean(values.email.trim()) &&
+    (values.name !== initialValues.name ||
+      values.email !== initialValues.email ||
+      values.instructor !== initialValues.instructor);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (values.loading || !isDirty) return;
     setValues({ ...values, loading: true, error: "" });
 
     const jwt = auth.isAuthenticated();
     const user = {
-      name: values.name || undefined,
-      email: values.email || undefined,
+      name: values.name,
+      email: values.email,
       instructor: values.instructor,
     };
 
@@ -81,8 +104,8 @@ export default function EditProfile() {
     const data = await update({ userId }, { t: jwt.token }, user);
 
     if (!isCurrent()) return;
-    if (data && data.error) {
-      setValues({ ...values, error: data?.error, loading: false });
+    if (data.error) {
+      setValues({ ...values, error: data.error, loading: false });
     } else {
       auth.updateUser({ ...data, instructor: values.instructor }, () => {
         navigate(`/user/${userId}`);
@@ -93,7 +116,89 @@ export default function EditProfile() {
   if (fetching || loadedIdentity !== identity) {
     return <PageSkeleton variant="profile" label="Loading profile editor" />;
   }
-  if (loadError) return <PageState error message={loadError} />;
+  if (loadError)
+    return (
+      <PageState
+        error
+        title="Unable to load profile editor"
+        message={loadError}
+      />
+    );
 
-  return (<main className={styles.page}><h1>Edit profile</h1>{values.error && <p role="alert">{values.error}</p>}<form onSubmit={handleSubmit}>{["name", "email"].map(field => <label key={field}>{field}<input value={values[field]} onChange={handleChange(field)} required /></label>)}<label><input type="checkbox" checked={values.instructor} onChange={handleCheck} />I am an instructor</label><button disabled={values.loading}>Save</button></form></main>);
+  return (
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Edit Profile</h1>
+        <p className={styles.subtitle}>Update your profile details and role</p>
+
+        {values.error && (
+          <div role="alert" className={styles.error}>
+            {values.error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className={styles.formGroup}>
+            <label htmlFor="editprofile-field-1" className={styles.label}>
+              Full Name
+            </label>
+            <input
+              id="editprofile-field-1"
+              type="text"
+              className={styles.input}
+              value={values.name}
+              onChange={handleChange("name")}
+              required
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="editprofile-field-2" className={styles.label}>
+              Email Address
+            </label>
+            <input
+              id="editprofile-field-2"
+              type="email"
+              className={styles.input}
+              value={values.email}
+              onChange={handleChange("email")}
+              required
+            />
+          </div>
+
+          <div className={styles.switchWrap}>
+            <div>
+              <span className={styles.switchLabel}>I am an Instructor</span>
+              <span className={styles.switchSubtext}>
+                Enables course authoring, curriculum management, and student
+                analytics
+              </span>
+            </div>
+            <label className={styles.switch}>
+              <input
+                type="checkbox"
+                aria-label="I am an instructor"
+                checked={values.instructor}
+                onChange={handleCheck}
+              />
+              <span className={styles.switchSlider}></span>
+            </label>
+          </div>
+
+          <div className={styles.actions}>
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={values.loading || !isDirty}
+            >
+              {values.loading ? "Saving..." : "Save"}
+            </button>
+            <Link to={`/user/${userId}`} className={styles.cancelButton}>
+              Cancel
+            </Link>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
