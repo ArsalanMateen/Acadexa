@@ -13,7 +13,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const authData = useAuth();
-  const identity = `${userId}:${authData?.token}`;
+  const identity = `${userId}:${authData.token}`;
   const capture = useRecordScope(identity);
   const [loadedIdentity, setLoadedIdentity] = useState(null);
 
@@ -30,12 +30,12 @@ export default function Profile() {
 
     read({ userId }, { t: jwt.token }, signal).then((data) => {
       if (abortController.signal.aborted || !isCurrent()) return;
-      if (data && data.error) {
+      if (data.error) {
         console.error(data.error);
-      } else if (data) {
+        setLoadError(data.error);
+      } else {
         setUser(data);
       }
-      if (!data || data.error) setLoadError(data?.error || "Unable to load this page.");
 
       setLoading(false);
     });
@@ -54,7 +54,7 @@ export default function Profile() {
 
       remove({ userId }, { t: jwt.token }).then((data) => {
         if (!isCurrent()) return;
-        if (data && data.error) {
+        if (data.error) {
           alert(data.error);
         } else {
           auth.clearJWT(() => navigate("/"));
@@ -66,9 +66,16 @@ export default function Profile() {
   if (loading || loadedIdentity !== identity) {
     return <PageSkeleton variant="profile" label="Loading profile" />;
   }
-  if (loadError) return <PageState error message={loadError} />;
+  if (loadError)
+    return (
+      <PageState
+        error
+        title="Profile unavailable"
+        message={loadError}
+      />
+    );
 
-  const isOwner = auth.isAuthenticated()?.user?._id === user._id;
+  const isOwner = authData.user._id === user._id;
   const joinedDate = user.created
     ? new Date(user.created).toLocaleDateString("en-US", {
         month: "long",
@@ -76,5 +83,56 @@ export default function Profile() {
       })
     : "Recently";
 
-  return (<main className={styles.page}><h1>{user.name}</h1><p>{user.email}</p><p>{user.instructor ? "Instructor" : "Student"}</p>{isOwner && <><Link to={`/user/edit/${user._id}`}>Edit profile</Link><button onClick={handleDelete}>Delete account</button></>}</main>);
+  return (
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <div className={styles.avatar}>
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+          <div className={styles.userInfo}>
+            <div className={styles.nameRow}>
+              <h1 className={styles.name}>{user.name}</h1>
+              <span
+                className={
+                  user.instructor ? styles.badgeInstructor : styles.badgeStudent
+                }
+              >
+                {user.instructor ? "Instructor" : "Student"}
+              </span>
+            </div>
+            <p className={styles.email}>{user.email}</p>
+          </div>
+        </div>
+
+        <div className={styles.detailsGrid}>
+          <div className={styles.detail}>
+            <span className={styles.detailLabel}>Role</span>
+            <span className={styles.detailValue}>
+              {user.instructor ? "Instructor" : "Student"}
+            </span>
+          </div>
+          <div className={styles.detail}>
+            <span className={styles.detailLabel}>Member since</span>
+            <span className={styles.detailValue}>{joinedDate}</span>
+          </div>
+        </div>
+
+        {isOwner && (
+          <div className={styles.actions}>
+            <Link to={`/user/edit/${user._id}`} className={styles.editButton}>
+              Edit Profile
+            </Link>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className={styles.deleteButton}
+            >
+              Delete Account
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

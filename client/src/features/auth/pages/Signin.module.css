@@ -110,3 +110,53 @@
   color: var(--color-primary-hover);
 }
 
+.divider {
+  display: flex;
+  align-items: center;
+  margin: var(--space-lg) 0 var(--space-md);
+  gap: var(--space-md);
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-border);
+}
+
+.dividerText {
+  font-size: 13px;
+  color: var(--color-text-light);
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.demo {
+  margin-top: var(--space-xs);
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.demoText {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.demoButton {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color var(--transition-fast);
+  display: inline;
+}
+
+.demoButton:hover {
+  color: var(--color-primary-hover);
+}
+
