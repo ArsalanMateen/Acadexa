@@ -29,7 +29,9 @@ export default function Navbar() {
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        if (navigationButtonRef.current?.getAttribute("aria-expanded") === "true") {
+        if (
+          navigationButtonRef.current?.getAttribute("aria-expanded") === "true"
+        ) {
           navigationButtonRef.current.focus();
         } else if (dropdownRef.current?.contains(document.activeElement)) {
           accountButtonRef.current?.focus();
@@ -49,11 +51,28 @@ export default function Navbar() {
     };
   }, []);
 
+  const userId = authData ? authData.user._id : null;
+
   useEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect -- Close disclosures when navigation or the signed-in account changes.
     setDropdownOpen(false);
     setNavigationOpen(false);
-  }, [location.pathname, authData?.user?._id]);
+  }, [location.pathname, userId]);
+
+  useEffect(() => {
+    if (navigationOpen) navigationRef.current?.querySelector("a")?.focus();
+  }, [navigationOpen]);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1025px)");
+    const handleResize = (event) => {
+      if (event.matches) setNavigationOpen(false);
+    };
+
+    desktop.addEventListener("change", handleResize);
+
+    return () => desktop.removeEventListener("change", handleResize);
+  }, []);
 
   const handleSignout = () => {
     setDropdownOpen(false);
@@ -72,14 +91,15 @@ export default function Navbar() {
   const isLearningActive =
     location.pathname === "/learning" || location.pathname.startsWith("/learn");
 
-  const isInstructorUser = Boolean(authData?.user?.instructor);
-  const accountName = authData?.user?.name?.trim() || "Account";
+  const isInstructorUser = Boolean(authData && authData.user.instructor);
+  const accountName = (authData && authData.user.name.trim()) || "Account";
 
   const isInstructorActive = isInstructorUser
     ? location.pathname.startsWith("/teach")
     : authData
       ? location.pathname.startsWith("/user/edit")
-      : location.pathname === "/signup" || location.pathname.startsWith("/teach");
+      : location.pathname === "/signup" ||
+        location.pathname.startsWith("/teach");
 
   const navigationItems = [
     {
@@ -297,6 +317,37 @@ export default function Navbar() {
           )}
         </div>
 
+        <button
+          type="button"
+          ref={navigationButtonRef}
+          className={styles.menuToggle}
+          aria-label={
+            navigationOpen ? "Close navigation menu" : "Open navigation menu"
+          }
+          aria-expanded={navigationOpen}
+          aria-controls="navbar-navigation"
+          onClick={() => {
+            setDropdownOpen(false);
+            setNavigationOpen((prev) => !prev);
+          }}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            {navigationOpen ? (
+              <path d="m6 6 12 12M6 18 18 6" />
+            ) : (
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            )}
+          </svg>
+        </button>
       </div>
     </header>
   );
