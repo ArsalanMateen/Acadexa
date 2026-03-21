@@ -1,0 +1,294 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0.85rem var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+.brandName {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.navItem {
+  position: relative;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  padding: var(--space-xs) var(--space-2xs);
+  transition: color var(--transition-fast);
+}
+
+.navItem:hover {
+  color: var(--color-text-main);
+}
+
+.navItemActive {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.navIndicator {
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-md);
+}
+
+.auth {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.guest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.outlineButton {
+  padding: 7px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.outlineButton:hover {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.filledButton {
+  padding: 7px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px var(--color-primary-shadow);
+  transition: all var(--transition-fast);
+}
+
+.filledButton:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  color: var(--color-text-inverse);
+}
+
+.userMenu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profileButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: transparent;
+  border: 1px solid #94a3b8;
+  border-radius: var(--radius-full);
+  padding: 8px 10px 8px 16px;
+  min-height: 40px;
+  cursor: pointer;
+  color: var(--color-text-body);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  user-select: none;
+}
+
+.navIcon,
+.menuToggle,
+.mobileAuth {
+  display: none;
+}
+
+.profileButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.userName {
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: inherit;
+}
+
+.chevron {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 232px;
+  max-width: calc(100vw - 32px);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 14px;
+  box-shadow:
+    0 12px 36px rgba(15, 23, 42, 0.1),
+    0 2px 6px rgba(15, 23, 42, 0.04);
+  padding: 8px;
+  z-index: 200;
+}
+
+.accountSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.accountName {
+  color: var(--color-text-main);
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.accountRole {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background-color: var(--color-border-subtle);
+  margin: 0.35rem 0;
+}
+
+.dropdownLinks {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.dropdownItem {
+  display: block;
+  padding: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-body);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.dropdownItem:hover {
+  background-color: var(--color-bg-main);
+  color: var(--color-text-main);
+}
+
+.dropdownSignout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #b42318;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.dropdownSignout:hover,
+.dropdownSignout:focus-visible {
+  background-color: #fef2f2;
+  color: #b42318;
+}
+
+.dropdownSignout svg {
+  flex-shrink: 0;
+}
+
+.dropdownItem:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  background-color: var(--color-bg-main);
+}
+
+.dropdownSignout:focus-visible {
+  outline: 2px solid #b42318;
+  outline-offset: -2px;
+}
+
