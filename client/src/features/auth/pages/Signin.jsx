@@ -24,14 +24,41 @@ export default function Signin() {
     setValues({ ...values, loading: true, error: "" });
 
     const user = {
-      email: values.email || undefined,
-      password: values.password || undefined,
+      email: values.email,
+      password: values.password,
     };
 
     const data = await signin(user);
 
     if (data.error) {
       setValues({ ...values, error: data.error, loading: false });
+    } else {
+      auth.authenticate(data, () => {
+        const from = location.state?.from?.pathname || "/";
+
+        navigate(from, { replace: true });
+      });
+    }
+  };
+
+  const loginAsDemo = async (email) => {
+    const user = {
+      email,
+      password: "password",
+    };
+
+    setValues((prev) => ({
+      ...prev,
+      email: user.email,
+      password: user.password,
+      loading: true,
+      error: "",
+    }));
+
+    const data = await signin(user);
+
+    if (data.error) {
+      setValues((prev) => ({ ...prev, error: data.error, loading: false }));
     } else {
       auth.authenticate(data, () => {
         const from = location.state?.from?.pathname || "/";
@@ -62,7 +89,6 @@ export default function Signin() {
               id="signin-field-1"
               type="email"
               className={styles.input}
-              placeholder="you@example.com"
               value={values.email}
               onChange={handleChange("email")}
               required
@@ -77,17 +103,49 @@ export default function Signin() {
               id="signin-field-2"
               type="password"
               className={styles.input}
-              placeholder="Enter your password"
               value={values.password}
               onChange={handleChange("password")}
               required
             />
           </div>
 
-          <button type="submit" className={styles.button} disabled={values.loading}>
+          <button
+            type="submit"
+            className={styles.button}
+            disabled={values.loading}
+          >
             {values.loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <div className={styles.divider}>
+          <span className={styles.dividerLine}></span>
+          <span className={styles.dividerText}>or</span>
+          <span className={styles.dividerLine}></span>
+        </div>
+
+        <div className={styles.demo}>
+          <span className={styles.demoText}>Sign in as </span>
+          <button
+            type="button"
+            className={styles.demoButton}
+            disabled={values.loading}
+            onClick={() => loginAsDemo("student@acadexa.dev")}
+            title="Student demo account"
+          >
+            Alex Rivera
+          </button>
+          <span className={styles.demoText}> or </span>
+          <button
+            type="button"
+            className={styles.demoButton}
+            disabled={values.loading}
+            onClick={() => loginAsDemo("angela.yu@acadexa.dev")}
+            title="Instructor demo account"
+          >
+            Dr. Angela Yu
+          </button>
+        </div>
 
         <p className={styles.footer}>
           Don't have an account?{" "}
