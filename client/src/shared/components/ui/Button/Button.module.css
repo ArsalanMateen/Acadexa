@@ -1,0 +1,110 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+  user-select: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Sizes */
+.sizeSmall {
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  border-radius: 6px;
+}
+
+.sizeMedium {
+  padding: 10px 18px;
+  font-size: 0.9375rem;
+  border-radius: 8px;
+}
+
+.sizeLarge {
+  padding: 12px 24px;
+  font-size: 1rem;
+  border-radius: 8px;
+}
+
+/* Full Width */
+.fullWidth {
+  width: 100%;
+}
+
+/* Variants */
+.variantPrimary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}
+
+.variantPrimary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.variantOutline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.variantOutline:hover:not(:disabled) {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-hover);
+}
+
+.variantSecondary {
+  background-color: var(--color-secondary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-secondary);
+}
+
+.variantSecondary:hover:not(:disabled) {
+  background-color: var(--color-secondary-hover);
+  border-color: var(--color-secondary-hover);
+}
+
+.variantGhost {
+  background-color: transparent;
+  color: var(--color-text-body);
+  border-color: transparent;
+}
+
+.variantGhost:hover:not(:disabled) {
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-main);
+}
+
+.variantDanger {
+  background-color: var(--color-danger);
+  color: var(--color-text-inverse);
+  border-color: var(--color-danger);
+}
+
+.variantDanger:hover:not(:disabled) {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
