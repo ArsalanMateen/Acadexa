@@ -289,4 +289,50 @@ const remove = async (req, res) => {
   }
 };
 
-export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson, photo, defaultPhoto, remove };
+const readOverview = async (req, res) => {
+  const id = req.params.overviewCourseId;
+
+  if (typeof id !== "string" || !/^[a-f\d]{24}$/i.test(id)) {
+    return res.status(400).json({ error: "Could not retrieve course" });
+  }
+
+  try {
+    const overview = await Course.findById(id)
+      .select(
+        "_id name description category image published instructor lessons._id lessons.title created updated __v",
+      )
+      .populate("instructor", "_id name instructor")
+      .lean()
+      .exec();
+
+    if (!overview) return res.status(400).json({ error: "Course not found" });
+
+    const isOwner =
+      req.auth &&
+      overview.instructor &&
+      String(overview.instructor._id || overview.instructor) === String(req.auth._id);
+
+    if (!overview.published && !isOwner) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+    if (isOwner) {
+      // Include ownership in the reread so a concurrent ownership change cannot expose full lessons.
+      const full = await Course.findOne({ _id: overview._id, instructor: req.auth._id })
+        .populate("instructor", "_id name instructor")
+        .exec();
+
+      if (!full) return res.status(404).json({ error: "Course not found" });
+
+      return res.json(full);
+    }
+
+    return res.json({
+      ...overview,
+      lessons: (overview.lessons || []).map(({ _id, title }) => ({ _id, title })),
+    });
+  } catch {
+    return res.status(400).json({ error: "Could not retrieve course" });
+  }
+};
+
+export default { create, listByInstructor, courseByID, read, isInstructor, update, listPublished, newLesson, photo, defaultPhoto, remove, readOverview };
