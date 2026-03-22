@@ -21,6 +21,17 @@ const signin = async (req, res) => {
       });
     }
 
+    if (!user.hashed_password.startsWith("scrypt:")) {
+      const previousHash = user.hashed_password;
+
+      user.password = req.body.password;
+
+      await User.updateOne(
+        { _id: user._id, hashed_password: previousHash },
+        { $set: { hashed_password: user.hashed_password, salt: user.salt } },
+      );
+    }
+
     const token = jwt.sign(
       {
         _id: user._id,
@@ -65,8 +76,15 @@ const requireSignin = expressJwt({
   algorithms: ["HS256"],
 });
 
+const optionalSignin = expressJwt({
+  secret: config.jwtSecret,
+  userProperty: "auth",
+  algorithms: ["HS256"],
+  credentialsRequired: false,
+});
+
 const hasAuthorization = (req, res, next) => {
-  const isAuthorized = req.profile && req.auth && req.profile._id == req.auth._id;
+  const isAuthorized = req.profile._id == req.auth._id;
 
   if (!isAuthorized) {
     return res.status("403").json({
@@ -77,11 +95,10 @@ const hasAuthorization = (req, res, next) => {
   next();
 };
 
-const optionalSignin = expressJwt({
-  secret: config.jwtSecret,
-  userProperty: "auth",
-  algorithms: ["HS256"],
-  credentialsRequired: false,
-});
-
-export default { signin, signout, requireSignin, hasAuthorization, optionalSignin };
+export default {
+  signin,
+  signout,
+  requireSignin,
+  optionalSignin,
+  hasAuthorization,
+};
