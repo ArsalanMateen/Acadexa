@@ -19,7 +19,10 @@ const UserSchema = new mongoose.Schema({
     required: "Password is required",
   },
   salt: String,
-  instructor: { type: Boolean, default: false },
+  instructor: {
+    type: Boolean,
+    default: false,
+  },
   updated: Date,
   created: {
     type: Date,
@@ -51,7 +54,10 @@ UserSchema.methods = {
     if (typeof plainText !== "string" || !this.hashed_password) return false;
 
     try {
-      const actual = `scrypt:${crypto.scryptSync(plainText, this.salt, 64).toString("hex")}`;
+      // Existing accounts keep working until their next password change.
+      const actual = this.hashed_password.startsWith("scrypt:")
+        ? `scrypt:${crypto.scryptSync(plainText, this.salt, 64).toString("hex")}`
+        : crypto.createHmac("sha1", this.salt).update(plainText).digest("hex");
       const expectedBytes = Buffer.from(this.hashed_password);
       const actualBytes = Buffer.from(actual);
 

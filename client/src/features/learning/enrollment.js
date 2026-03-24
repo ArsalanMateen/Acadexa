@@ -12,14 +12,20 @@ const read = (params, credentials, signal) =>
     signal,
   });
 
-const listEnrolled = (credentials, signal) =>
-  request("/api/enrollment/enrolled", { headers: authorization(credentials), signal });
-
 const complete = (params, credentials, enrollmentData) =>
   request(`/api/enrollment/complete/${params.enrollmentId}`, {
     method: "PUT",
-    headers: { ...authorization(credentials), "Content-Type": "application/json" },
+    headers: {
+      ...authorization(credentials),
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(enrollmentData),
+  });
+
+const listEnrolled = (credentials, signal) =>
+  request("/api/enrollment/enrolled", {
+    headers: authorization(credentials),
+    signal,
   });
 
 const enrollmentStats = (params, credentials, signal) =>
@@ -29,7 +35,10 @@ const enrollmentStats = (params, credentials, signal) =>
   });
 
 const enrollmentStatsByInstructor = (credentials, signal) =>
-  request("/api/enrollment/stats/by-instructor", { headers: authorization(credentials), signal });
+  request("/api/enrollment/stats/by-instructor", {
+    headers: authorization(credentials),
+    signal,
+  });
 
 const enrollmentForCourse = (params, credentials, signal) =>
   request(`/api/enrollment/for-course/${encodeURIComponent(params.courseId)}`, {
@@ -37,4 +46,12 @@ const enrollmentForCourse = (params, credentials, signal) =>
     signal,
   });
 
-export { create, read, listEnrolled, complete, enrollmentStats, enrollmentStatsByInstructor, enrollmentForCourse };
+export {
+  create,
+  read,
+  complete,
+  listEnrolled,
+  enrollmentStats,
+  enrollmentStatsByInstructor,
+  enrollmentForCourse,
+};

@@ -3,7 +3,21 @@ import mongoose from "mongoose";
 const LessonSchema = new mongoose.Schema({
   title: { type: String, trim: true, required: "Lesson title is required" },
   content: String,
-  resource_url: String,
+  resource_url: {
+    type: String,
+    validate: {
+      validator: (value) => {
+        if (!value) return true;
+
+        try {
+          return ["http:", "https:"].includes(new URL(value).protocol);
+        } catch {
+          return false;
+        }
+      },
+      message: "Resource URL must start with http:// or https://",
+    },
+  },
 });
 
 const Lesson = mongoose.model("Lesson", LessonSchema);
@@ -18,7 +32,10 @@ const CourseSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  image: { type: String, default: "" },
+  image: {
+    type: String,
+    default: "",
+  },
   category: {
     type: String,
     required: "Category is required",
@@ -38,7 +55,6 @@ const CourseSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
 
 CourseSchema.index({ published: 1, created: -1, _id: -1 });
 CourseSchema.index({ instructor: 1 });

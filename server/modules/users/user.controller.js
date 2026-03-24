@@ -1,9 +1,9 @@
 import User from "./user.model.js";
-import errorHandler from "../../lib/dbErrorHandler.js";
 import Course from "../courses/course.model.js";
 import Enrollment from "../enrollments/enrollment.model.js";
 import r2Helper from "../../integrations/r2.js";
 import mongoose from "mongoose";
+import errorHandler from "../../lib/dbErrorHandler.js";
 
 const create = async (req, res) => {
   const { name, email, password } = req.body;
@@ -15,6 +15,21 @@ const create = async (req, res) => {
     return res.status(200).json({
       message: "Successfully signed up!",
     });
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err),
+    });
+  }
+};
+
+const list = async (req, res) => {
+  try {
+    let users = await User.find()
+      .select("name instructor created")
+      .lean()
+      .exec();
+
+    res.json(users);
   } catch (err) {
     return res.status(400).json({
       error: errorHandler.getErrorMessage(err),
@@ -76,30 +91,6 @@ const update = async (req, res) => {
   }
 };
 
-const list = async (req, res) => {
-  try {
-    let users = await User.find().select("name instructor created").lean().exec();
-
-    res.json(users);
-  } catch (err) {
-    return res.status(400).json({
-      error: errorHandler.getErrorMessage(err),
-    });
-  }
-};
-
-const isInstructor = (req, res, next) => {
-  const isInstructor = req.profile && req.profile.instructor;
-
-  if (!isInstructor) {
-    return res.status(403).json({
-      error: "User is not an instructor",
-    });
-  }
-
-  next();
-};
-
 const remove = async (req, res) => {
   let session;
 
@@ -123,7 +114,9 @@ const remove = async (req, res) => {
       await Course.deleteMany({ instructor: user._id }, { session });
       deletedUser = await User.findByIdAndDelete(user._id, { session });
     });
-    await Promise.all(courses.map((course) => r2Helper.deleteCourseImage(course.image)));
+    await Promise.all(
+      courses.map((course) => r2Helper.deleteCourseImage(course.image)),
+    );
 
     if (!deletedUser) return res.status(404).json({ error: "User not found" });
 
@@ -139,4 +132,24 @@ const remove = async (req, res) => {
   }
 };
 
-export default { create, userByID, read, update, list, isInstructor, remove };
+const isInstructor = (req, res, next) => {
+  const isInstructor = req.profile.instructor;
+
+  if (!isInstructor) {
+    return res.status(403).json({
+      error: "User is not an instructor",
+    });
+  }
+
+  next();
+};
+
+export default {
+  create,
+  userByID,
+  read,
+  list,
+  remove,
+  update,
+  isInstructor,
+};

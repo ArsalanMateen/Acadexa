@@ -3,12 +3,15 @@ import userCtrl from "./user.controller.js";
 import authCtrl from "../auth/auth.controller.js";
 
 const router = express.Router();
-
-router.post("/api/users", userCtrl.create);
-router.get("/api/users/:userId", authCtrl.requireSignin, userCtrl.read);
-router.put("/api/users/:userId", authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.update);
-router.get("/api/users", authCtrl.requireSignin, userCtrl.list);
-router.delete("/api/users/:userId", authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.remove);
+router
+  .route("/api/users")
+  .get(authCtrl.requireSignin, userCtrl.list)
+  .post(userCtrl.create);
+router
+  .route("/api/users/:userId")
+  .get(authCtrl.requireSignin, userCtrl.read)
+  .put(authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.update)
+  .delete(authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.remove);
 router.param("userId", userCtrl.userByID);
 
 export default router;
