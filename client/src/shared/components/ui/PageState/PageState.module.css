@@ -1,12 +1,95 @@
-.state {
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4.5rem 1.5rem;
   width: 100%;
-  margin: 24px 0;
-  color: var(--color-text-muted);
+  max-width: 520px;
+  margin: 2rem auto;
+  box-sizing: border-box;
 }
 
-:global(.main-content) > .state {
-  max-width: 1320px;
-  margin: 32px auto;
-  padding: 0 24px;
+:global(.main-content) > .container {
+  margin: 3rem auto;
 }
 
+.compact {
+  padding: 2rem 1rem;
+  margin: 1rem auto;
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.defaultTone {
+  color: var(--color-text-muted, #64748b);
+  opacity: 0.85;
+}
+
+.brandTone {
+  color: var(--color-primary, #5857f5);
+  opacity: 0.9;
+}
+
+.errorTone {
+  color: var(--color-danger, #ef4444);
+  opacity: 1;
+}
+
+.successTone {
+  color: var(--color-success, #10b981);
+  opacity: 1;
+}
+
+.icon {
+  width: 36px;
+  height: 36px;
+  display: block;
+}
+
+.compact .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-main, #0f172a);
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+.compact .title {
+  font-size: 1.05rem;
+  margin-bottom: 0.35rem;
+}
+
+.errorTitle {
+  color: var(--color-danger, #ef4444);
+}
+
+.message {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted, #64748b);
+  line-height: 1.55;
+  max-width: 440px;
+}
+
+.compact .message {
+  font-size: 0.875rem;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 3rem 1rem;
+  }
+}

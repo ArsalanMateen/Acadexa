@@ -7,7 +7,7 @@
 .container {
   max-width: 1320px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 24px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -399,3 +399,70 @@
   height: 18px;
 }
 
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .sidebar,
+  .main {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .contentCard {
+    padding: 1.25rem 1rem;
+    box-sizing: border-box;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .paragraph {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .navBar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .navRight {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.65rem;
+  }
+
+  .checkButton,
+  .nextButton,
+  .previousButton {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    box-sizing: border-box;
+  }
+
+  .lessonTitle {
+    font-size: 1.35rem;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .thumbnailWrap {
+    height: 160px;
+  }
+}

@@ -39,14 +39,14 @@
   margin-top: 14px;
   padding: 8px 12px;
   border: 1px solid var(--color-primary);
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   background: var(--color-bg-card);
   color: var(--color-primary);
   font-size: 0.8125rem;
   font-weight: 600;
   transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast);
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .button:hover:not(:disabled) {
@@ -58,3 +58,13 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 600px) {
+  .upload {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .preview {
+    max-width: 280px;
+  }
+}
