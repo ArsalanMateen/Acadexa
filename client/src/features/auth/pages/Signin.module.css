@@ -1,15 +1,15 @@
 .page {
-  max-width: 440px;
+  max-width: 490px;
   margin: 4rem auto;
-  padding: 0 var(--space-md);
+  padding: 0 16px;
 }
 
 .card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 2.25rem;
-  box-shadow: var(--shadow-md);
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
 .title {
@@ -17,7 +17,7 @@
   font-weight: 700;
   color: var(--color-text-main);
   text-align: center;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 4px;
 }
 
 .subtitle {
@@ -35,7 +35,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 4px;
   color: var(--color-text-main);
 }
 
@@ -46,9 +46,9 @@
   color: var(--color-text-main);
   background-color: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   outline: none;
-  transition: all var(--transition-fast);
+  transition: all 0.15s ease;
 }
 
 .input::placeholder {
@@ -66,15 +66,15 @@
 .button {
   width: 100%;
   padding: 11px;
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
   border: none;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  margin-top: var(--space-xs);
-  transition: background-color var(--transition-fast);
+  margin-top: 4px;
+  transition: background-color 0.15s ease;
 }
 
 .button:hover:not(:disabled) {
@@ -113,8 +113,8 @@
 .divider {
   display: flex;
   align-items: center;
-  margin: var(--space-lg) 0 var(--space-md);
-  gap: var(--space-md);
+  margin: 24px 0 16px;
+  gap: 16px;
 }
 
 .dividerLine {
@@ -131,7 +131,7 @@
 }
 
 .demo {
-  margin-top: var(--space-xs);
+  margin-top: 4px;
   text-align: center;
   font-size: 14px;
   color: var(--color-text-muted);
@@ -152,11 +152,10 @@
   text-decoration: underline;
   cursor: pointer;
   font-family: inherit;
-  transition: color var(--transition-fast);
+  transition: color 0.15s ease;
   display: inline;
 }
 
 .demoButton:hover {
   color: var(--color-primary-hover);
 }
-

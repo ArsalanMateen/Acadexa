@@ -162,3 +162,14 @@
   color: #b91c1c;
 }
 
+@media (max-width: 600px) {
+  .page {
+    width: 100%;
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+
+  .card {
+    padding: 24px 16px;
+  }
+}
