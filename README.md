@@ -24,3 +24,28 @@ Mark lessons as completed and follow your course progress. **My Learning** keeps
 
 ![My Learning showing enrolled courses and individual completion progress](docs/assets/my-learning.jpg)
 
+## For instructors
+
+### Build a course around your expertise
+
+Give your course a title, category, description, and cover image. Add lessons with written content and supporting resources to create a clear learning path.
+
+### Publish when you are ready
+
+Keep a course as a draft while preparing it, then publish it for learners to discover. Preview your course and update its details and lessons from your course editor.
+
+![Course editor with course information, publication controls, and a lesson curriculum](docs/assets/course-editor.jpg)
+
+### Manage your courses in one place
+
+**My Courses** brings together your curriculum, publication status, enrollment counts, and completion counts. Edit your courses and see how many learners have enrolled or finished.
+
+![Instructor dashboard with published courses and learner enrollment and completion counts](docs/assets/instructor-courses.jpg)
+
+## Learning that fits your day
+
+Acadexa adapts its navigation and course layouts for desktop, tablet, and mobile screens. Your account supports both learning and teaching, so you can build your own skills while sharing them with others.
+
+## License
+
+This project is licensed under the [MIT](LICENSE) License.
